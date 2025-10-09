@@ -9,7 +9,8 @@ import {
 } from './generic.js';
 import { Synchronizer } from './interface.svelte.js';
 
-export type MapObjectHybrid<V extends SyncableType> = SvelteMap<string, V> & Record<string, V>;
+export type MapObjectHybrid<T extends Record<string, SyncableType>> = T &
+	SvelteMap<keyof T, T[keyof T]>;
 
 const MapMutationFunctionNames = ['clear', 'delete', 'set'] satisfies (keyof Map<never, never>)[];
 
@@ -18,11 +19,11 @@ const MapMutationFunctionNameSet = new Set<string>(MapMutationFunctionNames);
 type MapMutationFunctionName = ElementOf<typeof MapMutationFunctionNames>;
 type WriteOnlyMap<K, V> = Pick<Map<K, V>, MapMutationFunctionName>;
 
-export class MapSynchronizer<V extends SyncableType>
-	extends Synchronizer<SvelteMap<string, V>, Y.Map<any>>
-	implements WriteOnlyMap<string, V>
+export class MapSynchronizer<K extends string, V extends SyncableType>
+	extends Synchronizer<SvelteMap<K, V>, Y.Map<any>>
+	implements WriteOnlyMap<K, V>
 {
-	inSvelte = new SvelteMap<string, V>();
+	inSvelte = new SvelteMap<K, V>();
 
 	constructor(inYjs: Y.Map<V>, initialValue?: SyncableMapOrObject) {
 		super(inYjs);
@@ -36,9 +37,9 @@ export class MapSynchronizer<V extends SyncableType>
 
 			this.addFromMapOrObject(initialValue);
 		} else if (yjsMapHasItems) {
-			const initialEntriesInSvelte = [...inYjs.entries()].map<[string, V]>(
+			const initialEntriesInSvelte = [...inYjs.entries()].map<[K, V]>(
 				// Create proxied entries
-				([key, value]) => [key, createProxyFromYType<V>(value)]
+				([key, value]) => [key as K, createProxyFromYType<V>(value)]
 			);
 
 			for (const [key, value] of initialEntriesInSvelte) {
@@ -53,13 +54,13 @@ export class MapSynchronizer<V extends SyncableType>
 		return this.inSvelte.clear();
 	}
 
-	delete(key: string): boolean {
+	delete(key: K): boolean {
 		this.inYjs.delete(key);
 
 		return this.inSvelte.delete(key);
 	}
 
-	set(key: string, value: V): Map<string, V> {
+	set(key: K, value: V): SvelteMap<K, V> {
 		const synchronized = createSynchronizerFromValue(value);
 
 		this.inYjs.set(key, synchronized.inYjs);
@@ -71,7 +72,7 @@ export class MapSynchronizer<V extends SyncableType>
 
 		for (const [key, synchronized] of synchronizerEntries) {
 			this.inYjs.set(key, synchronized.inYjs);
-			this.inSvelte.set(key, synchronized.state as V);
+			this.inSvelte.set(key as K, synchronized.state as V);
 		}
 	}
 
@@ -102,7 +103,7 @@ export class MapSynchronizer<V extends SyncableType>
 		}
 	}
 
-	asTrap(): MapObjectHybrid<V> {
+	asTrap(): MapObjectHybrid<Record<K, V>> {
 		return new Proxy(this.inSvelte, {
 			get: (state, property, receiver) => {
 				if (typeof property === 'string') {
@@ -113,7 +114,7 @@ export class MapSynchronizer<V extends SyncableType>
 						return (...args: unknown[]) => this[property as MapMutationFunctionName](...args);
 					} else if (!(property in this.inSvelte)) {
 						// Trap object property access
-						return this.inSvelte.get(property);
+						return this.inSvelte.get(property as K);
 					}
 				}
 
@@ -129,10 +130,10 @@ export class MapSynchronizer<V extends SyncableType>
 					);
 				}
 
-				this.set(property, newValue);
+				this.set(property as K, newValue);
 				return true;
 			}
-		}) as MapObjectHybrid<V>;
+		}) as MapObjectHybrid<Record<K, V>>;
 	}
 }
 
