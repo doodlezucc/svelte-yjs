@@ -1,4 +1,4 @@
-import type { PreventMapProperties } from './map-object-hybrid.js';
+import type { PreventMapProperties } from './prevent-map-properties.js';
 import type { SyncedText } from './synced-text.svelte.js';
 
 export type SyncableType =

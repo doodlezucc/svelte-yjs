@@ -1,8 +1,8 @@
 import { expect, test } from 'vitest';
 import * as Y from 'yjs';
-import type { DeclareDocument } from '../syncable-document-type.js';
-import { createSynchronizerFromValue } from './generic.js';
-import type { MapObjectHybrid } from './synced-map-object.svelte.js';
+import type { DeclareDocument } from '../../syncable-document-type.js';
+import { createSynchronizedPairFromValue } from '../generic.js';
+import type { MapObjectHybrid } from './map-synchronizer.svelte.js';
 
 type MyDocument = DeclareDocument<{
 	isCool: boolean;
@@ -10,7 +10,7 @@ type MyDocument = DeclareDocument<{
 }>;
 
 test('Map proxy :)', () => {
-	const map = createSynchronizerFromValue<MyDocument>({
+	const map = createSynchronizedPairFromValue<MyDocument>({
 		isCool: true
 	});
 
@@ -18,6 +18,7 @@ test('Map proxy :)', () => {
 
 	expect(myHybrid.isCool).toEqual(true);
 
+	// @ts-expect-error
 	expect(myHybrid.get('hellish')).toEqual(undefined);
 	expect(myHybrid.get('isCool')).toEqual(true);
 	expect(myHybrid.name).toEqual(undefined);
@@ -29,4 +30,10 @@ test('Map proxy :)', () => {
 
 	expect(inYjs.size).toEqual(1);
 	expect(inYjs.toJSON()).toEqual({ isCool: true });
+
+	// Modification
+
+	myHybrid.name = 'John';
+	expect(inYjs.toJSON()).toEqual({ isCool: true, name: 'John' });
+	expect(myHybrid.get('name')).toEqual('John');
 });

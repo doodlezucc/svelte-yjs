@@ -1,17 +1,17 @@
 import * as Y from 'yjs';
 import { isSyncableNative, type SyncableType } from '../syncable-document-type.js';
 import { SyncedText } from '../synced-text.svelte.js';
-import { ArraySynchronizer } from './synced-array.svelte.js';
-import { MapSynchronizer } from './synced-map-object.svelte.js';
+import { ArraySynchronizer } from './synchronizers/array-synchronizer.svelte.js';
+import { MapSynchronizer } from './synchronizers/map-synchronizer.svelte.js';
 
-export interface ResolvedSyncableType<TType, YType> {
+export interface SynchronizedPair<TType, YType> {
 	state: TType;
 	inYjs: YType;
 }
 
-export function createSynchronizerFromValue<T extends SyncableType>(
+export function createSynchronizedPairFromValue<T extends SyncableType>(
 	value: T
-): ResolvedSyncableType<T, any> {
+): SynchronizedPair<T, any> {
 	if (isSyncableNative(value)) {
 		// Native value can't have a dedicated reactive wrapper.
 		return {
@@ -30,7 +30,7 @@ export function createSynchronizerFromValue<T extends SyncableType>(
 	}
 
 	if (value instanceof SyncedText) {
-		throw new Error(`createSynchronizerFromValue is not yet implemented for SyncedText`);
+		throw new Error(`createSynchronizedPairFromValue is not yet implemented for SyncedText`);
 	}
 
 	if (value instanceof Map || typeof value === 'object') {
@@ -42,7 +42,7 @@ export function createSynchronizerFromValue<T extends SyncableType>(
 		};
 	}
 
-	throw new Error(`createSynchronizerFromValue received invalid value ${value}`);
+	throw new Error(`createSynchronizedPairFromValue received invalid value ${value}`);
 }
 
 export function createProxyFromYType<T>(yType: unknown): T {

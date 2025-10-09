@@ -1,13 +1,13 @@
 import { SvelteMap } from 'svelte/reactivity';
 import type { ElementOf } from 'ts-essentials';
 import * as Y from 'yjs';
-import { type SyncableObject, type SyncableType } from '../syncable-document-type.js';
+import { type SyncableObject, type SyncableType } from '../../syncable-document-type.js';
 import {
 	createProxyFromYType,
-	createSynchronizerFromValue,
-	type ResolvedSyncableType
-} from './generic.js';
-import { Synchronizer } from './interface.svelte.js';
+	createSynchronizedPairFromValue,
+	type SynchronizedPair
+} from '../generic.js';
+import { Synchronizer } from './interface.js';
 
 export type MapObjectHybrid<T extends Record<string, SyncableType>> = T &
 	SvelteMap<keyof T, T[keyof T]>;
@@ -61,7 +61,7 @@ export class MapSynchronizer<K extends string, V extends SyncableType>
 	}
 
 	set(key: K, value: V): SvelteMap<K, V> {
-		const synchronized = createSynchronizerFromValue(value);
+		const synchronized = createSynchronizedPairFromValue(value);
 
 		this.inYjs.set(key, synchronized.inYjs);
 		return this.inSvelte.set(key, synchronized.state);
@@ -141,9 +141,9 @@ type SyncableMapOrObject = Map<string, SyncableType> | SyncableObject;
 
 function createSynchronizersFromMapOrObject(source: SyncableMapOrObject) {
 	const entries = extractEntriesFromMapOrObject(source);
-	return entries.map<[string, ResolvedSyncableType<SyncableType, any>]>(([key, value]) => [
+	return entries.map<[string, SynchronizedPair<SyncableType, any>]>(([key, value]) => [
 		key,
-		createSynchronizerFromValue(value)
+		createSynchronizedPairFromValue(value)
 	]);
 }
 

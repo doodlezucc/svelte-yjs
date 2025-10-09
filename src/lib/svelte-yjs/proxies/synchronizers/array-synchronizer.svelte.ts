@@ -1,8 +1,8 @@
 import type { ElementOf } from 'ts-essentials';
 import * as Y from 'yjs';
-import { type SyncableType } from '../syncable-document-type.js';
-import { createProxyFromYType, createSynchronizerFromValue } from './generic.js';
-import { Synchronizer } from './interface.svelte.js';
+import { type SyncableType } from '../../syncable-document-type.js';
+import { createProxyFromYType, createSynchronizedPairFromValue } from '../generic.js';
+import { Synchronizer } from './interface.js';
 
 const ArrayMutationFunctionNames = [
 	'copyWithin',
@@ -62,7 +62,7 @@ export class ArraySynchronizer<E extends SyncableType>
 	}
 
 	push(...items: E[]): number {
-		const resolvedItems = items.map((item) => createSynchronizerFromValue(item));
+		const resolvedItems = items.map((item) => createSynchronizedPairFromValue(item));
 
 		this.inYjs.push(resolvedItems.map((item) => item.inYjs));
 		return this.inSvelte.push(...resolvedItems.map((item) => item.state));
@@ -86,7 +86,7 @@ export class ArraySynchronizer<E extends SyncableType>
 
 	splice(start: number, deleteCount?: number, ...rest: E[]): E[] {
 		// TODO: Write a proper test for this
-		const itemsToInsert = rest.map((item) => createSynchronizerFromValue(item));
+		const itemsToInsert = rest.map((item) => createSynchronizedPairFromValue(item));
 
 		this.inYjs.doc!.transact(() => {
 			const effectiveDeleteCount = deleteCount ?? this.inYjs.length - start;
@@ -110,7 +110,7 @@ export class ArraySynchronizer<E extends SyncableType>
 
 	unshift(...items: E[]): number {
 		// TODO: Write a proper test for this
-		const resolvedItems = items.map((item) => createSynchronizerFromValue(item));
+		const resolvedItems = items.map((item) => createSynchronizedPairFromValue(item));
 		this.inYjs.unshift(resolvedItems.map((item) => item.inYjs));
 
 		return this.inSvelte.unshift(...resolvedItems.map((item) => item.state));
