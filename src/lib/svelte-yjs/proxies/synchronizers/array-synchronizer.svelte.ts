@@ -166,8 +166,16 @@ export class ArraySynchronizer<E extends SyncableType>
 					const isMutationFunction = ArrayMutationFunctionNameSet.has(property);
 
 					if (isMutationFunction) {
-						// @ts-expect-error
-						return (...args: unknown[]) => this[property as ArrayMutationFunctionName](...args);
+						return (...args: unknown[]) => {
+							// @ts-expect-error
+							const functionResult = this[property as ArrayMutationFunctionName](...args);
+
+							if (functionResult === this.inSvelte) {
+								// Any functions which return the "this" object
+								// have to return the proxied array instead.
+								return receiver;
+							}
+						};
 					}
 				}
 
