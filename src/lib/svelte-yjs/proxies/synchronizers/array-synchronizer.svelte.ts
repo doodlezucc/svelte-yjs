@@ -225,28 +225,60 @@ export class ArraySynchronizer<E extends SyncableType>
 		return 0;
 	}
 
-	splice(start: number, deleteCount?: number, ...rest: E[]): E[] {
-		// TODO: Write a proper test for this
-		const itemsToInsert = rest.map((item) => createSynchronizedPairFromValue(item));
-
-		this.inYjs.doc?.transact(() => {
-			const effectiveDeleteCount = deleteCount ?? this.inYjs.length - start;
-
-			this.inYjs.delete(start, effectiveDeleteCount);
-
-			if (itemsToInsert.length > 0) {
-				this.inYjs.insert(
-					start,
-					itemsToInsert.map((item) => item.inYjs)
-				);
-			}
-		});
-
-		if (deleteCount === undefined) {
+	splice(start: number, ...variantArgs: [number?, ...E[]]): E[] {
+		if (variantArgs.length === 0) {
+			this.yjsSplice(start);
 			return this.inSvelte.splice(start);
 		} else {
-			return this.inSvelte.splice(start, deleteCount, ...itemsToInsert.map((item) => item.state));
+			const [deleteCount, ...insertedItems] = variantArgs;
+
+			const pairsToInsert = insertedItems.map((item) => createSynchronizedPairFromValue(item));
+			const yjsItemsToInsert = pairsToInsert.map((pair) => pair.inYjs);
+			const stateItemsToInsert = pairsToInsert.map((pair) => pair.state);
+
+			this.yjsSplice(start, deleteCount, ...yjsItemsToInsert);
+			return this.inSvelte.splice(start, deleteCount!, ...stateItemsToInsert);
 		}
+	}
+
+	private yjsSplice(start: number, ...variantArgs: [number?, ...unknown[]]) {
+		let [deleteCount, ...insertedItems] = variantArgs;
+
+		const length = this.inSvelte.length;
+
+		if (start < -length) {
+			start = 0;
+		} else if (start < 0) {
+			start = start + length;
+		} else if (start >= length) {
+			// No element will be deleted, but the method will behave as an
+			// adding function, adding as many elements as provided.
+			start = length;
+			deleteCount = 0;
+		}
+
+		if (variantArgs.length === 0) {
+			// If deleteCount is omitted [...], then all the elements
+			// from `start` to the end of the array will be deleted.
+			deleteCount = length - start;
+		} else if (deleteCount === undefined) {
+			// An explicit undefined gets converted to 0
+			deleteCount = 0;
+		} else if (deleteCount < 0) {
+			deleteCount = 0;
+		} else if (deleteCount > length - start) {
+			deleteCount = length - start;
+		}
+
+		this.inYjs.doc?.transact(() => {
+			if (deleteCount > 0) {
+				this.inYjs.delete(start, deleteCount);
+			}
+
+			if (insertedItems.length > 0) {
+				this.inYjs.insert(start, insertedItems);
+			}
+		});
 	}
 
 	unshift(...items: E[]): number {

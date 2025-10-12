@@ -261,6 +261,48 @@ describe('Array.sort behavior', () => {
 	});
 });
 
+test('Array.splice behavior', () => {
+	const insertedItemsToTest = [
+		[],
+		['new a'],
+		['new a', 'new b'],
+		['new a', 'new b', 'new c', 'new d', 'new e']
+	];
+
+	const testCaseArguments: [number, number?, ...string[]][] = [];
+
+	for (const start of [-4, -3, -2, -1, 0, 1, 2, 3, 4]) {
+		testCaseArguments.push([start]);
+
+		for (const end of [undefined, -1, 0, 1, 2, 3, 4, Infinity]) {
+			for (const insertedItems of insertedItemsToTest) {
+				testCaseArguments.push([start, end, ...insertedItems]);
+			}
+		}
+	}
+
+	for (const args of testCaseArguments) {
+		const jsArray = ['first', 'second', 'third'];
+
+		// @ts-expect-error The parameters of splice don't intersect well.
+		//
+		// Array.splice returns the deleted items.
+		const expectedResult = jsArray.splice(...args);
+		const expectedNewArray = jsArray;
+
+		const { proxiedArray, yjsArrayModified, synchronize, remoteProxiedArray } =
+			createdSynchronizedDocument(['first', 'second', 'third']);
+
+		// @ts-expect-error The parameters of splice don't intersect well.
+		expect(proxiedArray.splice(...args), JSON.stringify(args)).toEqual(expectedResult);
+		expect(proxiedArray).toEqual(expectedNewArray);
+		expect(yjsArrayModified.mock.calls.length).toBeLessThanOrEqual(1);
+
+		synchronize();
+		expect(remoteProxiedArray).toEqual(expectedNewArray);
+	}
+});
+
 test('Array.unshift behavior', () => {
 	const { proxiedArray, yjsArrayModified, synchronize, remoteProxiedArray } =
 		createdSynchronizedDocument([]);
