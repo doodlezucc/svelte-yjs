@@ -172,7 +172,7 @@ describe('Array.reverse behavior', () => {
 		[['first', 'second'], ['second', 'first'], 1],
 		[['first'], ['first'], 0],
 		[[], [], 0]
-	])('%o reversed is %o with $i modifications', ([source, expectedResult, calls]) => {
+	])('%o reversed is %o with %i modifications', ([source, expectedResult, calls]) => {
 		const { proxiedArray, yjsArrayModified, synchronize, remoteProxiedArray } =
 			createdSynchronizedDocument(source);
 
@@ -212,6 +212,28 @@ test('Array.shift behavior', () => {
 	expect(yjsArrayModified).toHaveBeenCalledTimes(3); // Expect no unnecessary call
 	synchronize();
 	expect(remoteProxiedArray).toEqual([]);
+});
+
+describe('Array.sort behavior', () => {
+	test.for<[string[], string[], number]>([
+		[[], [], 0],
+		[['a'], ['a'], 0],
+		[['a', 'b'], ['a', 'b'], 0],
+		[['b', 'a'], ['a', 'b'], 1],
+		[['c', 'b', 'a'], ['a', 'b', 'c'], 1],
+		[['a', 'd', 'b', 'a', 'c'], ['a', 'a', 'b', 'c', 'd'], 1]
+	])('%o sorted is %o with %i modifications', ([source, expectedResult, calls]) => {
+		const { proxiedArray, yjsArrayModified, synchronize, remoteProxiedArray } =
+			createdSynchronizedDocument(source);
+
+		// Expect the function result to be the proxied "this" object
+		expect(proxiedArray.sort()).toBe(proxiedArray);
+		expect(proxiedArray).toEqual(expectedResult);
+		expect(yjsArrayModified).toHaveBeenCalledTimes(calls);
+
+		synchronize();
+		expect(remoteProxiedArray).toEqual(expectedResult);
+	});
 });
 
 test('Array.unshift behavior', () => {

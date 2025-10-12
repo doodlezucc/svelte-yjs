@@ -175,9 +175,54 @@ export class ArraySynchronizer<E extends SyncableType>
 		return this.inSvelte.shift();
 	}
 
-	sort(compareFn?: ((a: E, b: E) => number) | undefined): E[] {
-		// TODO: Yjs update
-		return this.inSvelte.sort(compareFn);
+	sort(compareFn: ((a: E, b: E) => number) | undefined = this.defaultCompareFn): E[] {
+		if (this.inSvelte.length < 2) {
+			// Skip sorting empty arrays or one-item arrays
+			return this.inSvelte;
+		}
+
+		const sortedEntries = this.inSvelte
+			.entries()
+			.toArray()
+			.sort(([, a], [, b]) => compareFn(a, b));
+
+		const hasOrderChanged = sortedEntries.some(
+			([unsortedIndex], sortedIndex) => unsortedIndex !== sortedIndex
+		);
+
+		if (!hasOrderChanged) {
+			// Skip applying same order of items again
+			return this.inSvelte;
+		}
+
+		// This is not optimized for the insert/delete format of Yjs.
+		this.inYjs.doc?.transact(() => {
+			const unsortedYjsItems = this.inYjs.toArray();
+			const sortedYjsItems = sortedEntries.map(
+				([unsortedIndex]) => unsortedYjsItems[unsortedIndex]
+			);
+
+			this.inYjs.delete(0, unsortedYjsItems.length);
+			this.inYjs.insert(0, sortedYjsItems);
+		});
+
+		// Apply sorted entry order to actual array
+		const sorted = sortedEntries.map(([, item]) => item);
+		this.inSvelte.splice(0, this.inSvelte.length, ...sorted);
+		return this.inSvelte;
+	}
+
+	private defaultCompareFn(a: E, b: E): number {
+		// Based on MDN's description at
+		// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
+		//
+		// The default sort order is ascending, built upon converting the elements into strings,
+		// then comparing their sequences of UTF-16 code unit values.
+		const A = String(a);
+		const B = String(b);
+		if (A < B) return -1;
+		if (A > B) return 1;
+		return 0;
 	}
 
 	splice(start: number, deleteCount?: number, ...rest: E[]): E[] {
@@ -221,7 +266,7 @@ export class ArraySynchronizer<E extends SyncableType>
 		//
 		// Only the last update to the element at this index will persist by using
 		// delete & insert. For now, this is as close as it gets to an update transaction.
-		this.inYjs.doc!.transact(() => {
+		this.inYjs.doc?.transact(() => {
 			this.inYjs.delete(index);
 			this.inYjs.insert(index, [value]);
 		});
