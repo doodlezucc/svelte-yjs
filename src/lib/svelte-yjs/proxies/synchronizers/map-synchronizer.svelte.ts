@@ -85,28 +85,17 @@ export class MapSynchronizer<K extends string, V extends SyncableType>
 	}
 
 	handleRemoteUpdate(event: Y.YMapEvent<V>): void {
-		const delta = event.delta;
+		const changes = event.changes.keys;
 
-		let index = 0;
-		for (const operation of delta) {
-			// Skip unchanged indices
-			if (operation.retain !== undefined) {
-				index += operation.retain;
-			}
-			// Insert items at this point
-			else if (operation.insert) {
-				const newItems = operation.insert as V[];
-
-				// TODO: no idea what the format is for these events
-
-				const newItemsInSvelte = newItems.map((item) => createProxyFromYType<V>(item));
-
-				// this.inSvelte.splice(index, 0, ...newItemsInSvelte);
-				index += newItems.length;
-			}
-			// Delete items at this point
-			else if (operation.delete !== undefined) {
-				// this.inSvelte.splice(index, operation.delete);
+		for (const [key, change] of changes) {
+			switch (change.action) {
+				case 'add':
+				case 'update':
+					this.inSvelte.set(key as K, this.inYjs.get(key));
+					break;
+				case 'delete':
+					this.inSvelte.delete(key as K);
+					break;
 			}
 		}
 	}
