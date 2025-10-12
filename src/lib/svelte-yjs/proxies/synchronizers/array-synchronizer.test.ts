@@ -185,6 +185,35 @@ describe('Array.reverse behavior', () => {
 	});
 });
 
+test('Array.shift behavior', () => {
+	const { proxiedArray, yjsArrayModified, synchronize, remoteProxiedArray } =
+		createdSynchronizedDocument(['first', 'second', 'third']);
+
+	expect(proxiedArray.shift()).toEqual('first');
+	expect(proxiedArray).toEqual(['second', 'third']);
+	expect(yjsArrayModified).toHaveBeenCalledTimes(1);
+	synchronize();
+	expect(remoteProxiedArray).toEqual(['second', 'third']);
+
+	expect(proxiedArray.shift()).toEqual('second');
+	expect(proxiedArray).toEqual(['third']);
+	expect(yjsArrayModified).toHaveBeenCalledTimes(2);
+	synchronize();
+	expect(remoteProxiedArray).toEqual(['third']);
+
+	expect(proxiedArray.shift()).toEqual('third');
+	expect(proxiedArray).toEqual([]);
+	expect(yjsArrayModified).toHaveBeenCalledTimes(3);
+	synchronize();
+	expect(remoteProxiedArray).toEqual([]);
+
+	expect(proxiedArray.shift()).toBeUndefined();
+	expect(proxiedArray).toEqual([]);
+	expect(yjsArrayModified).toHaveBeenCalledTimes(3); // Expect no unnecessary call
+	synchronize();
+	expect(remoteProxiedArray).toEqual([]);
+});
+
 function createdSynchronizedDocument(initialValue?: string[]) {
 	const { yjsDoc, synchronizer, proxiedArray } = createdSynchronizedYDocWithArray(initialValue);
 

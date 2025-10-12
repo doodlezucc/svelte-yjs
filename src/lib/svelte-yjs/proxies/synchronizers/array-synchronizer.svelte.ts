@@ -168,7 +168,9 @@ export class ArraySynchronizer<E extends SyncableType>
 	}
 
 	shift(): E | undefined {
-		this.inYjs.delete(0);
+		if (this.inSvelte.length > 0) {
+			this.inYjs.delete(0);
+		}
 
 		return this.inSvelte.shift();
 	}
