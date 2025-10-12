@@ -87,7 +87,7 @@ export class ArraySynchronizer<E extends SyncableType>
 			return; // Nothing is copied
 		}
 
-		this.inYjs.doc?.transact(() => {
+		this.transact(() => {
 			const validRangeLength = Math.min(end - start, length - target);
 
 			this.inYjs.delete(target, validRangeLength);
@@ -129,7 +129,7 @@ export class ArraySynchronizer<E extends SyncableType>
 			return; // Nothing is filled
 		}
 
-		this.inYjs.doc?.transact(() => {
+		this.transact(() => {
 			const insertedValues = new Array(end - start).fill(value);
 
 			this.inYjs.delete(start, insertedValues.length);
@@ -156,7 +156,7 @@ export class ArraySynchronizer<E extends SyncableType>
 		const length = this.inSvelte.length;
 
 		if (length >= 2) {
-			this.inYjs.doc?.transact(() => {
+			this.transact(() => {
 				const yjsItemsAfterFirst = this.inYjs.slice(1).reverse();
 
 				this.inYjs.delete(1, length - 1);
@@ -196,7 +196,7 @@ export class ArraySynchronizer<E extends SyncableType>
 		}
 
 		// This is not optimized for the insert/delete format of Yjs.
-		this.inYjs.doc?.transact(() => {
+		this.transact(() => {
 			const unsortedYjsItems = this.inYjs.toArray();
 			const sortedYjsItems = sortedEntries.map(
 				([unsortedIndex]) => unsortedYjsItems[unsortedIndex]
@@ -270,7 +270,7 @@ export class ArraySynchronizer<E extends SyncableType>
 			deleteCount = length - start;
 		}
 
-		this.inYjs.doc?.transact(() => {
+		this.transact(() => {
 			if (deleteCount > 0) {
 				this.inYjs.delete(start, deleteCount);
 			}
@@ -298,7 +298,7 @@ export class ArraySynchronizer<E extends SyncableType>
 		//
 		// Only the last update to the element at this index will persist by using
 		// delete & insert. For now, this is as close as it gets to an update transaction.
-		this.inYjs.doc?.transact(() => {
+		this.transact(() => {
 			this.inYjs.delete(index);
 			this.inYjs.insert(index, [value]);
 		});
@@ -364,5 +364,15 @@ export class ArraySynchronizer<E extends SyncableType>
 				return true;
 			}
 		});
+	}
+
+	private transact(body: () => void) {
+		const yjsDoc = this.inYjs.doc;
+
+		if (yjsDoc) {
+			yjsDoc.transact(() => body());
+		} else {
+			body();
+		}
 	}
 }
