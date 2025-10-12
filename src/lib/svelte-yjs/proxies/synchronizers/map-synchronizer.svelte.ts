@@ -91,7 +91,8 @@ export class MapSynchronizer<K extends string, V extends SyncableType>
 			switch (change.action) {
 				case 'add':
 				case 'update':
-					this.inSvelte.set(key as K, this.inYjs.get(key));
+					const proxiedValue = createProxyFromYType<V>(this.inYjs.get(key));
+					this.inSvelte.set(key as K, proxiedValue);
 					break;
 				case 'delete':
 					this.inSvelte.delete(key as K);
