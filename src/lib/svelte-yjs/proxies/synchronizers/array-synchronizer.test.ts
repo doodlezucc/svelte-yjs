@@ -100,7 +100,7 @@ describe('Array.copyWithin behavior', () => {
 			expect(yjsArrayModified).not.toHaveBeenCalled();
 		} else {
 			expect(yjsArrayModified).toHaveBeenCalled();
-			expect(yjsArrayModified.mock.calls.length).toBeLessThanOrEqual(5);
+			expect(yjsArrayModified.mock.calls.length).toBeLessThanOrEqual(2);
 		}
 
 		synchronize();

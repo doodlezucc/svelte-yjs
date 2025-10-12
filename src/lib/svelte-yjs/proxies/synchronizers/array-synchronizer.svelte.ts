@@ -46,8 +46,55 @@ export class ArraySynchronizer<E extends SyncableType>
 	}
 
 	copyWithin(target: number, start: number, end?: number): E[] {
-		// TODO: Yjs update
+		this.yjsCopyWithin(target, start, end);
 		return this.inSvelte.copyWithin(target, start, end);
+	}
+
+	private yjsCopyWithin(target: number, start: number, end?: number) {
+		// Normalize arguments
+
+		const length = this.inSvelte.length;
+
+		if (target < -length) {
+			target = 0;
+		} else if (target < 0) {
+			target = target + length;
+		} else if (target >= length) {
+			return; // Nothing is copied
+		}
+
+		if (start < -length) {
+			start = 0;
+		} else if (start < 0) {
+			start = start + length;
+		} else if (start >= length) {
+			return; // Nothing is copied
+		}
+
+		if (start === target) {
+			return; // Items would be copied to the place they're already at
+		}
+
+		if (end === undefined) {
+			end = length;
+		} else if (end < -length) {
+			end = 0;
+		} else if (end < 0) {
+			end = end + length;
+		} else if (end > length) {
+			end = length;
+		}
+
+		if (end <= start) {
+			return; // Nothing is copied
+		}
+
+		this.inYjs.doc?.transact(() => {
+			const validRangeLength = Math.min(end - start, length - target);
+
+			this.inYjs.delete(target, validRangeLength);
+			this.inYjs.insert(target, this.inSvelte.slice(start, start + validRangeLength));
+		});
 	}
 
 	fill(value: E, start?: number, end?: number): E[] {
@@ -88,7 +135,7 @@ export class ArraySynchronizer<E extends SyncableType>
 		// TODO: Write a proper test for this
 		const itemsToInsert = rest.map((item) => createSynchronizedPairFromValue(item));
 
-		this.inYjs.doc!.transact(() => {
+		this.inYjs.doc?.transact(() => {
 			const effectiveDeleteCount = deleteCount ?? this.inYjs.length - start;
 
 			this.inYjs.delete(start, effectiveDeleteCount);
