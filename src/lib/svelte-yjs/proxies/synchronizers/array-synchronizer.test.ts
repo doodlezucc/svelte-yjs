@@ -215,24 +215,49 @@ test('Array.shift behavior', () => {
 });
 
 describe('Array.sort behavior', () => {
-	test.for<[string[], string[], number]>([
-		[[], [], 0],
-		[['a'], ['a'], 0],
-		[['a', 'b'], ['a', 'b'], 0],
-		[['b', 'a'], ['a', 'b'], 1],
-		[['c', 'b', 'a'], ['a', 'b', 'c'], 1],
-		[['a', 'd', 'b', 'a', 'c'], ['a', 'a', 'b', 'c', 'd'], 1]
-	])('%o sorted is %o with %i modifications', ([source, expectedResult, calls]) => {
-		const { proxiedArray, yjsArrayModified, synchronize, remoteProxiedArray } =
-			createdSynchronizedDocument(source);
+	describe('Default comparison', () => {
+		test.for<[string[], string[], number]>([
+			[[], [], 0],
+			[['a'], ['a'], 0],
+			[['a', 'b'], ['a', 'b'], 0],
+			[['b', 'a'], ['a', 'b'], 1],
+			[['c', 'b', 'a'], ['a', 'b', 'c'], 1],
+			[['a', 'd', 'b', 'a', 'c'], ['a', 'a', 'b', 'c', 'd'], 1]
+		])('%o sorted is %o with %i modifications', ([source, expectedResult, calls]) => {
+			const { proxiedArray, yjsArrayModified, synchronize, remoteProxiedArray } =
+				createdSynchronizedDocument(source);
 
-		// Expect the function result to be the proxied "this" object
-		expect(proxiedArray.sort()).toBe(proxiedArray);
-		expect(proxiedArray).toEqual(expectedResult);
-		expect(yjsArrayModified).toHaveBeenCalledTimes(calls);
+			// Expect the function result to be the proxied "this" object
+			expect(proxiedArray.sort()).toBe(proxiedArray);
+			expect(proxiedArray).toEqual(expectedResult);
+			expect(yjsArrayModified).toHaveBeenCalledTimes(calls);
 
-		synchronize();
-		expect(remoteProxiedArray).toEqual(expectedResult);
+			synchronize();
+			expect(remoteProxiedArray).toEqual(expectedResult);
+		});
+	});
+
+	describe('Reverse localeCompare comparison', () => {
+		test.for<[string[], string[], number]>([
+			[[], [], 0],
+			[['a'], ['a'], 0],
+			[['b', 'a'], ['b', 'a'], 0],
+			[['c', 'b', 'a'], ['c', 'b', 'a'], 0],
+			[['a', 'b'], ['b', 'a'], 1],
+			[['c', 'a', 'b'], ['c', 'b', 'a'], 1],
+			[['a', 'd', 'b', 'a', 'c'], ['d', 'c', 'b', 'a', 'a'], 1]
+		])('%o sorted is %o with %i modifications', ([source, expectedResult, calls]) => {
+			const { proxiedArray, yjsArrayModified, synchronize, remoteProxiedArray } =
+				createdSynchronizedDocument(source);
+
+			// Expect the function result to be the proxied "this" object
+			expect(proxiedArray.sort((a, b) => b.localeCompare(a))).toBe(proxiedArray);
+			expect(proxiedArray).toEqual(expectedResult);
+			expect(yjsArrayModified).toHaveBeenCalledTimes(calls);
+
+			synchronize();
+			expect(remoteProxiedArray).toEqual(expectedResult);
+		});
 	});
 });
 
