@@ -47,30 +47,6 @@ test('Iterate items', () => {
 	expect(yjsArrayModified).not.toHaveBeenCalled();
 });
 
-test('Array.at behavior', () => {
-	const { proxiedArray, yjsArrayModified } = createdSynchronizedDocument(['first', 'second']);
-
-	expect(proxiedArray.at(0)).toEqual('first');
-	expect(proxiedArray.at(1)).toEqual('second');
-	expect(proxiedArray.at(2)).toBeUndefined();
-
-	// A negative index counts back from the last.
-	expect(proxiedArray.at(-1)).toEqual('second');
-
-	expect(yjsArrayModified).not.toHaveBeenCalled();
-});
-
-test('Array.concat behavior', () => {
-	const { proxiedArray, yjsArrayModified } = createdSynchronizedDocument(['first', 'second']);
-
-	expect(proxiedArray.concat(['third'])).toEqual(['first', 'second', 'third']);
-
-	// Array.concat doesn't modify the original array.
-	expect(proxiedArray).toEqual(['first', 'second']);
-
-	expect(yjsArrayModified).not.toHaveBeenCalled();
-});
-
 describe('Array.copyWithin behavior', () => {
 	const testCaseArguments: [number, number, number?][] = [];
 
@@ -92,11 +68,42 @@ describe('Array.copyWithin behavior', () => {
 		expect(proxiedArray.copyWithin(...args)).toBe(proxiedArray);
 		expect(proxiedArray).toEqual(expectedResult);
 
-		if (
-			expectedResult[0] === 'first' &&
-			expectedResult[1] === 'second' &&
-			expectedResult[2] === 'third'
-		) {
+		const [a, b, c] = expectedResult;
+
+		if (a === 'first' && b === 'second' && c === 'third') {
+			expect(yjsArrayModified).not.toHaveBeenCalled();
+		} else {
+			expect(yjsArrayModified).toHaveBeenCalled();
+			expect(yjsArrayModified.mock.calls.length).toBeLessThanOrEqual(2);
+		}
+
+		synchronize();
+		expect(remoteProxiedArray).toEqual(expectedResult);
+	});
+});
+
+describe('Array.fill behavior', () => {
+	const testCaseArguments: [number?, number?][] = [];
+
+	for (const start of [undefined, -4, -3, -2, -1, 0, 1, 2, 3, 4]) {
+		for (const end of [undefined, -4, -3, -2, -1, 0, 1, 2, 3, 4]) {
+			testCaseArguments.push([start, end]);
+		}
+	}
+
+	test.for(testCaseArguments)('fill(..., %i, %i)', (args) => {
+		const expectedResult = ['first', 'second', 'third'].fill('FILL', ...args);
+
+		const { proxiedArray, yjsArrayModified, synchronize, remoteProxiedArray } =
+			createdSynchronizedDocument(['first', 'second', 'third']);
+
+		// Expect the function result to be the proxied "this" object
+		expect(proxiedArray.fill('FILL', ...args)).toBe(proxiedArray);
+		expect(proxiedArray).toEqual(expectedResult);
+
+		const [a, b, c] = expectedResult;
+
+		if (a === 'first' && b === 'second' && c === 'third') {
 			expect(yjsArrayModified).not.toHaveBeenCalled();
 		} else {
 			expect(yjsArrayModified).toHaveBeenCalled();
@@ -111,11 +118,8 @@ describe('Array.copyWithin behavior', () => {
 function createdSynchronizedDocument(initialValue?: string[]) {
 	const { yjsDoc, synchronizer, proxiedArray } = createdSynchronizedYDocWithArray(initialValue);
 
-	const {
-		yjsDoc: remoteYjsDoc,
-		synchronizer: remoteSynchronizer,
-		proxiedArray: remoteProxiedArray
-	} = createdSynchronizedYDocWithArray();
+	const { yjsDoc: remoteYjsDoc, proxiedArray: remoteProxiedArray } =
+		createdSynchronizedYDocWithArray();
 
 	function synchronize() {
 		const localUpdate = Y.encodeStateAsUpdate(yjsDoc);

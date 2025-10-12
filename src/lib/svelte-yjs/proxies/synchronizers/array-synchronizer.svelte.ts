@@ -51,8 +51,6 @@ export class ArraySynchronizer<E extends SyncableType>
 	}
 
 	private yjsCopyWithin(target: number, start: number, end?: number) {
-		// Normalize arguments
-
 		const length = this.inSvelte.length;
 
 		if (target < -length) {
@@ -98,8 +96,45 @@ export class ArraySynchronizer<E extends SyncableType>
 	}
 
 	fill(value: E, start?: number, end?: number): E[] {
-		// TODO: Yjs update
-		return this.inSvelte.fill(value, start, end);
+		const synchronizedValuePair = createSynchronizedPairFromValue(value);
+
+		this.yjsFill(synchronizedValuePair.inYjs, start, end);
+		return this.inSvelte.fill(synchronizedValuePair.state, start, end);
+	}
+
+	private yjsFill(value: unknown, start?: number, end?: number) {
+		const length = this.inSvelte.length;
+
+		if (start === undefined) {
+			start = 0;
+		} else if (start < -length) {
+			start = 0;
+		} else if (start < 0) {
+			start = start + length;
+		} else if (start >= length) {
+			return; // No index is filled
+		}
+
+		if (end === undefined) {
+			end = length;
+		} else if (end < -length) {
+			end = 0;
+		} else if (end < 0) {
+			end = end + length;
+		} else if (end > length) {
+			end = length;
+		}
+
+		if (end <= start) {
+			return; // Nothing is filled
+		}
+
+		this.inYjs.doc?.transact(() => {
+			const insertedValues = new Array(end - start).fill(value);
+
+			this.inYjs.delete(start, insertedValues.length);
+			this.inYjs.insert(start, insertedValues);
+		});
 	}
 
 	pop(): E | undefined {
