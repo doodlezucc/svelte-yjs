@@ -205,7 +205,6 @@ export class ArraySynchronizer<E extends SyncableType>
 	}
 
 	unshift(...items: E[]): number {
-		// TODO: Write a proper test for this
 		const resolvedItems = items.map((item) => createSynchronizedPairFromValue(item));
 		this.inYjs.unshift(resolvedItems.map((item) => item.inYjs));
 

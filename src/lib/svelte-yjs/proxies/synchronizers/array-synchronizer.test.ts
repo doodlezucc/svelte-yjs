@@ -214,6 +214,30 @@ test('Array.shift behavior', () => {
 	expect(remoteProxiedArray).toEqual([]);
 });
 
+test('Array.unshift behavior', () => {
+	const { proxiedArray, yjsArrayModified, synchronize, remoteProxiedArray } =
+		createdSynchronizedDocument([]);
+
+	// Array.unshift returns the new length of the array.
+	expect(proxiedArray.unshift('first', 'second')).toEqual(2);
+	expect(proxiedArray).toEqual(['first', 'second']);
+	expect(yjsArrayModified).toHaveBeenCalledTimes(1);
+	synchronize();
+	expect(remoteProxiedArray).toEqual(['first', 'second']);
+
+	expect(proxiedArray.unshift('third')).toEqual(3);
+	expect(proxiedArray).toEqual(['third', 'first', 'second']);
+	expect(yjsArrayModified).toHaveBeenCalledTimes(2);
+	synchronize();
+	expect(remoteProxiedArray).toEqual(['third', 'first', 'second']);
+
+	expect(proxiedArray.unshift()).toEqual(3);
+	expect(proxiedArray).toEqual(['third', 'first', 'second']);
+	expect(yjsArrayModified).toHaveBeenCalledTimes(2); // Expect no unnecessary call
+	synchronize();
+	expect(remoteProxiedArray).toEqual(['third', 'first', 'second']);
+});
+
 function createdSynchronizedDocument(initialValue?: string[]) {
 	const { yjsDoc, synchronizer, proxiedArray } = createdSynchronizedYDocWithArray(initialValue);
 
