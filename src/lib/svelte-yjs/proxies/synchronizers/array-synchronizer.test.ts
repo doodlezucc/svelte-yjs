@@ -73,8 +73,7 @@ describe('Array.copyWithin behavior', () => {
 		if (a === 'first' && b === 'second' && c === 'third') {
 			expect(yjsArrayModified).not.toHaveBeenCalled();
 		} else {
-			expect(yjsArrayModified).toHaveBeenCalled();
-			expect(yjsArrayModified.mock.calls.length).toBeLessThanOrEqual(2);
+			expect(yjsArrayModified).toHaveBeenCalledOnce();
 		}
 
 		synchronize();
@@ -106,8 +105,7 @@ describe('Array.fill behavior', () => {
 		if (a === 'first' && b === 'second' && c === 'third') {
 			expect(yjsArrayModified).not.toHaveBeenCalled();
 		} else {
-			expect(yjsArrayModified).toHaveBeenCalled();
-			expect(yjsArrayModified.mock.calls.length).toBeLessThanOrEqual(1);
+			expect(yjsArrayModified).toHaveBeenCalledOnce();
 		}
 
 		synchronize();
@@ -166,6 +164,25 @@ test('Array.push behavior', () => {
 	expect(yjsArrayModified).toHaveBeenCalledTimes(2); // Expect no unnecessary call
 	synchronize();
 	expect(remoteProxiedArray).toEqual(['first', 'second', 'third']);
+});
+
+describe('Array.reverse behavior', () => {
+	test.for<[string[], string[], number]>([
+		[['first', 'second', 'third'], ['third', 'second', 'first'], 1],
+		[['first', 'second'], ['second', 'first'], 1],
+		[['first'], ['first'], 0],
+		[[], [], 0]
+	])('%o reversed is %o with $i modifications', ([source, expectedResult, calls]) => {
+		const { proxiedArray, yjsArrayModified, synchronize, remoteProxiedArray } =
+			createdSynchronizedDocument(source);
+
+		expect(proxiedArray.reverse()).toBe(proxiedArray);
+		expect(proxiedArray).toEqual(expectedResult);
+		expect(yjsArrayModified).toHaveBeenCalledTimes(calls);
+
+		synchronize();
+		expect(remoteProxiedArray).toEqual(expectedResult);
+	});
 });
 
 function createdSynchronizedDocument(initialValue?: string[]) {

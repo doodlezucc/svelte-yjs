@@ -153,7 +153,17 @@ export class ArraySynchronizer<E extends SyncableType>
 	}
 
 	reverse(): E[] {
-		// TODO: Yjs update
+		const length = this.inSvelte.length;
+
+		if (length >= 2) {
+			this.inYjs.doc?.transact(() => {
+				const yjsItemsAfterFirst = this.inYjs.slice(1).reverse();
+
+				this.inYjs.delete(1, length - 1);
+				this.inYjs.insert(0, yjsItemsAfterFirst);
+			});
+		}
+
 		return this.inSvelte.reverse();
 	}
 
