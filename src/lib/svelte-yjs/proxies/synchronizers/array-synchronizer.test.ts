@@ -107,12 +107,41 @@ describe('Array.fill behavior', () => {
 			expect(yjsArrayModified).not.toHaveBeenCalled();
 		} else {
 			expect(yjsArrayModified).toHaveBeenCalled();
-			expect(yjsArrayModified.mock.calls.length).toBeLessThanOrEqual(2);
+			expect(yjsArrayModified.mock.calls.length).toBeLessThanOrEqual(1);
 		}
 
 		synchronize();
 		expect(remoteProxiedArray).toEqual(expectedResult);
 	});
+});
+
+test('Array.pop behavior', () => {
+	const { proxiedArray, yjsArrayModified, synchronize, remoteProxiedArray } =
+		createdSynchronizedDocument(['first', 'second', 'third']);
+
+	expect(proxiedArray.pop()).toEqual('third');
+	expect(proxiedArray).toEqual(['first', 'second']);
+	expect(yjsArrayModified).toHaveBeenCalledTimes(1);
+	synchronize();
+	expect(remoteProxiedArray).toEqual(['first', 'second']);
+
+	expect(proxiedArray.pop()).toEqual('second');
+	expect(proxiedArray).toEqual(['first']);
+	expect(yjsArrayModified).toHaveBeenCalledTimes(2);
+	synchronize();
+	expect(remoteProxiedArray).toEqual(['first']);
+
+	expect(proxiedArray.pop()).toEqual('first');
+	expect(proxiedArray).toEqual([]);
+	expect(yjsArrayModified).toHaveBeenCalledTimes(3);
+	synchronize();
+	expect(remoteProxiedArray).toEqual([]);
+
+	expect(proxiedArray.pop()).toBeUndefined();
+	expect(proxiedArray).toEqual([]);
+	expect(yjsArrayModified).toHaveBeenCalledTimes(3);
+	synchronize();
+	expect(remoteProxiedArray).toEqual([]);
 });
 
 function createdSynchronizedDocument(initialValue?: string[]) {

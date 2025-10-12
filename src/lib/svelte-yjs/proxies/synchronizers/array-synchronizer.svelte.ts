@@ -138,7 +138,9 @@ export class ArraySynchronizer<E extends SyncableType>
 	}
 
 	pop(): E | undefined {
-		this.inYjs.delete(this.inSvelte.length - 1);
+		if (this.inSvelte.length > 0) {
+			this.inYjs.delete(this.inSvelte.length - 1);
+		}
 
 		return this.inSvelte.pop();
 	}
@@ -253,9 +255,10 @@ export class ArraySynchronizer<E extends SyncableType>
 							const functionResult = this[property as ArrayMutationFunctionName](...args);
 
 							if (functionResult === this.inSvelte) {
-								// Any functions which return the "this" object
-								// have to return the proxied array instead.
+								// Any functions which return the "this" object have to return the proxied array instead.
 								return receiver;
+							} else {
+								return functionResult;
 							}
 						};
 					}
