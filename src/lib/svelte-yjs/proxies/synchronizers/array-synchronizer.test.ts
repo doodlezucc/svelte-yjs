@@ -47,7 +47,7 @@ test('Iterate items', () => {
 	expect(yjsArrayModified).not.toHaveBeenCalled();
 });
 
-describe('Array.copyWithin behavior', () => {
+test('Array.copyWithin behavior', () => {
 	const testCaseArguments: [number, number, number?][] = [];
 
 	for (const target of [-4, -3, -2, -1, 0, 1, 2, 3, 4]) {
@@ -58,7 +58,7 @@ describe('Array.copyWithin behavior', () => {
 		}
 	}
 
-	test.for(testCaseArguments)('copyWithin(%i, %i, %i)', (args) => {
+	for (const args of testCaseArguments) {
 		const expectedResult = ['first', 'second', 'third'].copyWithin(...args);
 
 		const { proxiedArray, yjsArrayModified, synchronize, remoteProxiedArray } =
@@ -78,10 +78,10 @@ describe('Array.copyWithin behavior', () => {
 
 		synchronize();
 		expect(remoteProxiedArray).toEqual(expectedResult);
-	});
+	}
 });
 
-describe('Array.fill behavior', () => {
+test('Array.fill behavior', () => {
 	const testCaseArguments: [number?, number?][] = [];
 
 	for (const start of [undefined, -4, -3, -2, -1, 0, 1, 2, 3, 4]) {
@@ -90,7 +90,7 @@ describe('Array.fill behavior', () => {
 		}
 	}
 
-	test.for(testCaseArguments)('fill(..., %i, %i)', (args) => {
+	for (const args of testCaseArguments) {
 		const expectedResult = ['first', 'second', 'third'].fill('FILL', ...args);
 
 		const { proxiedArray, yjsArrayModified, synchronize, remoteProxiedArray } =
@@ -110,7 +110,7 @@ describe('Array.fill behavior', () => {
 
 		synchronize();
 		expect(remoteProxiedArray).toEqual(expectedResult);
-	});
+	}
 });
 
 test('Array.pop behavior', () => {
