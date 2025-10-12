@@ -139,9 +139,33 @@ test('Array.pop behavior', () => {
 
 	expect(proxiedArray.pop()).toBeUndefined();
 	expect(proxiedArray).toEqual([]);
-	expect(yjsArrayModified).toHaveBeenCalledTimes(3);
+	expect(yjsArrayModified).toHaveBeenCalledTimes(3); // Expect no unnecessary call
 	synchronize();
 	expect(remoteProxiedArray).toEqual([]);
+});
+
+test('Array.push behavior', () => {
+	const { proxiedArray, yjsArrayModified, synchronize, remoteProxiedArray } =
+		createdSynchronizedDocument([]);
+
+	// Array.push returns the new length of the array.
+	expect(proxiedArray.push('first', 'second')).toEqual(2);
+	expect(proxiedArray).toEqual(['first', 'second']);
+	expect(yjsArrayModified).toHaveBeenCalledTimes(1);
+	synchronize();
+	expect(remoteProxiedArray).toEqual(['first', 'second']);
+
+	expect(proxiedArray.push('third')).toEqual(3);
+	expect(proxiedArray).toEqual(['first', 'second', 'third']);
+	expect(yjsArrayModified).toHaveBeenCalledTimes(2);
+	synchronize();
+	expect(remoteProxiedArray).toEqual(['first', 'second', 'third']);
+
+	expect(proxiedArray.push()).toEqual(3);
+	expect(proxiedArray).toEqual(['first', 'second', 'third']);
+	expect(yjsArrayModified).toHaveBeenCalledTimes(2); // Expect no unnecessary call
+	synchronize();
+	expect(remoteProxiedArray).toEqual(['first', 'second', 'third']);
 });
 
 function createdSynchronizedDocument(initialValue?: string[]) {
