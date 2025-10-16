@@ -1,4 +1,5 @@
 import { SvelteMap } from 'svelte/reactivity';
+import type { ValueOf } from 'ts-essentials';
 import * as Y from 'yjs';
 import { type SyncableObject, type SyncableType } from '../../syncable-document-type.js';
 import {
@@ -9,31 +10,15 @@ import {
 import { Synchronizer } from './interface.js';
 
 export type MapObjectHybrid<T extends Record<string, SyncableType>> = T &
-	SvelteMap<keyof T, T[keyof T]>;
+	SvelteMap<keyof T, ValueOf<T>>;
 
-type WriteOnlyMap<K, V> = Pick<Map<K, V>, 'clear' | 'delete' | 'set'>;
-
-const MapPropertyNames = new Set<string>(['size'] satisfies (keyof Map<never, never>)[]);
-const MapAccessFunctionNames = new Set<string>([
-	'entries',
-	'forEach',
-	'get',
-	'has',
-	'keys',
-	'values'
-] satisfies (keyof Map<never, never>)[]);
-const MapMutationFunctionNames = new Set<string>(['clear', 'delete', 'set'] satisfies (keyof Map<
-	never,
-	never
->)[]);
-
-export class MapSynchronizer<K extends string, V extends SyncableType>
-	extends Synchronizer<SvelteMap<K, V>, Y.Map<any>>
-	implements WriteOnlyMap<K, V>
+export class MapSynchronizer<T extends SyncableObject>
+	extends Synchronizer<T, Y.Map<any>>
+	implements Map<keyof T, ValueOf<T>>
 {
-	inSvelte = new SvelteMap<K, V>();
+	inSvelte = $state({}) as T;
 
-	constructor(inYjs: Y.Map<V>, initialValue?: SyncableMapOrObject) {
+	constructor(inYjs: Y.Map<ValueOf<T>>, initialValue?: SyncableMapOrObject) {
 		super(inYjs);
 
 		const yjsMapHasItems = inYjs.doc !== null && inYjs.size > 0;
@@ -45,34 +30,80 @@ export class MapSynchronizer<K extends string, V extends SyncableType>
 
 			this.addFromMapOrObject(initialValue);
 		} else if (yjsMapHasItems) {
-			const initialEntriesInSvelte = [...inYjs.entries()].map<[K, V]>(
-				// Create proxied entries
-				([key, value]) => [key as K, createProxyFromYType<V>(value)]
-			);
+			for (const [key, value] of inYjs.entries()) {
+				const proxiedValue = createProxyFromYType<ValueOf<T>>(value);
 
-			for (const [key, value] of initialEntriesInSvelte) {
-				this.inSvelte.set(key, value);
+				this.setPropertyInSvelteState(key, proxiedValue);
 			}
+		}
+	}
+
+	[Symbol.iterator]() {
+		return this.entries();
+	}
+
+	// In a usual map, this is 'Map'. By using 'Object' instead, vitest can
+	// validate the equality of this map object hybrid to an actual object.
+	[Symbol.toStringTag] = 'Object';
+
+	readonly size = $derived.by(() => Object.keys(this.inSvelte).length);
+
+	get(key: keyof T): ValueOf<T> | undefined {
+		return this.inSvelte[key] as ValueOf<T> | undefined;
+	}
+
+	has(key: keyof T): boolean {
+		return key in this.inSvelte;
+	}
+
+	forEach(): void {
+		throw new Error('This function must be called on the proxied map object hybrid to work');
+	}
+
+	*entries(): MapIterator<[keyof T, ValueOf<T>]> {
+		// The Yjs map keys are iterated here instead of the object keys
+		// because object keys don't follow insertion order in all cases.
+		for (const key of this.inYjs.keys()) {
+			yield [key, this.inSvelte[key] as ValueOf<T>];
+		}
+	}
+
+	*keys(): MapIterator<keyof T> {
+		for (const key of this.inYjs.keys()) {
+			yield key;
+		}
+	}
+
+	*values(): MapIterator<ValueOf<T>> {
+		for (const key of this.inYjs.keys()) {
+			yield this.inSvelte[key] as ValueOf<T>;
 		}
 	}
 
 	clear(): void {
 		this.inYjs.clear();
 
-		return this.inSvelte.clear();
+		for (const key of Object.keys(this.inSvelte)) {
+			delete this.inSvelte[key];
+		}
 	}
 
-	delete(key: K): boolean {
-		this.inYjs.delete(key);
-
-		return this.inSvelte.delete(key);
+	delete(key: keyof T & string): boolean {
+		if (key in this.inSvelte) {
+			this.inYjs.delete(key);
+			delete this.inSvelte[key];
+			return true;
+		} else {
+			return false;
+		}
 	}
 
-	set(key: K, value: V): SvelteMap<K, V> {
+	set(key: keyof T & string, value: ValueOf<T>): this {
 		const synchronized = createSynchronizedPairFromValue(value);
 
 		this.inYjs.set(key, synchronized.inYjs);
-		return this.inSvelte.set(key, synchronized.state);
+		this.setPropertyInSvelteState(key, synchronized.state);
+		return this;
 	}
 
 	private addFromMapOrObject(source: SyncableMapOrObject) {
@@ -80,59 +111,75 @@ export class MapSynchronizer<K extends string, V extends SyncableType>
 
 		for (const [key, synchronized] of synchronizerEntries) {
 			this.inYjs.set(key, synchronized.inYjs);
-			this.inSvelte.set(key as K, synchronized.state as V);
+			this.setPropertyInSvelteState(key, synchronized.state as ValueOf<T>);
 		}
 	}
 
-	handleRemoteUpdate(event: Y.YMapEvent<V>): void {
+	private setPropertyInSvelteState(key: keyof T, value: ValueOf<T>) {
+		// @ts-expect-error T might not be writable, but let's pretend it is.
+		this.inSvelte[key] = value;
+	}
+
+	handleRemoteUpdate(event: Y.YMapEvent<ValueOf<T>>): void {
 		const changes = event.changes.keys;
 
 		for (const [key, change] of changes) {
 			switch (change.action) {
 				case 'add':
 				case 'update':
-					const proxiedValue = createProxyFromYType<V>(this.inYjs.get(key));
-					this.inSvelte.set(key as K, proxiedValue);
+					const proxiedValue = createProxyFromYType<ValueOf<T>>(this.inYjs.get(key));
+					this.setPropertyInSvelteState(key, proxiedValue);
 					break;
 				case 'delete':
-					this.inSvelte.delete(key as K);
+					delete this.inSvelte[key];
 					break;
 			}
 		}
 	}
 
-	asTrap(): MapObjectHybrid<Record<K, V>> {
+	asTrap(): MapObjectHybrid<T> {
 		return new Proxy(this.inSvelte, {
-			get: (map, property, receiver) => {
-				if (typeof property === 'symbol') {
-					return Reflect.get(map, property, receiver);
-				}
-
-				const isMapProperty = MapPropertyNames.has(property);
-				const isMapAccessFunction = MapAccessFunctionNames.has(property);
-				const isMapMutationFunction = MapMutationFunctionNames.has(property);
+			get: (state, property, receiver) => {
+				const isMapProperty = isMapInstanceProperty(property);
+				const isMapFunction = isMapInstanceFunction(property);
 
 				// Use default map implementation for map.size property
 				if (isMapProperty) {
-					return map[property as keyof typeof map];
-				}
-
-				// Use default map implementation for functions like map.get(...), map.values(), etc.
-				else if (isMapAccessFunction) {
-					// @ts-expect-error
-					return (...args: unknown[]) => map[property as keyof typeof map](...args);
+					return this[property];
 				}
 
 				// Use overridden, "synchronized" implementation declared in this class for functions
 				// like map.set(...), map.clear(), etc.
-				else if (isMapMutationFunction) {
-					// @ts-expect-error
-					return (...args: unknown[]) => this[property as MapMutationFunctionName](...args);
+				else if (isMapFunction) {
+					if (property === 'forEach') {
+						// Because the callback must be provided with the "this" object,
+						// it has to be replaced with the proxied map object hybrid.
+
+						const forEach: Map<keyof T, ValueOf<T>>['forEach'] = (callback) => {
+							[...this.entries()].forEach(([key, value]) => {
+								callback(value, key, receiver);
+							});
+						};
+
+						return forEach;
+					}
+
+					return (...args: unknown[]) => {
+						// @ts-expect-error
+						const functionResult = this[property](...args);
+
+						if (functionResult === this.inSvelte) {
+							// Any functions which return the "this" object have to return the proxied version instead.
+							return receiver;
+						} else {
+							return functionResult;
+						}
+					};
 				}
 
-				// Use map lookup for all other property access (e.g. map.myValue, map['customValue'])
+				// Use default lookup for all other property access (e.g. map.myValue, map['customValue'])
 				else {
-					return map.get(property as K);
+					return Reflect.get(state, property, receiver);
 				}
 			},
 
@@ -144,53 +191,21 @@ export class MapSynchronizer<K extends string, V extends SyncableType>
 					);
 				}
 
-				this.set(property as K, newValue);
+				this.set(property, newValue);
 				return true;
 			},
 
-			// Trap Object.entries(...), Object.keys(...) and Object.values(...) calls
-			ownKeys: (target) => {
-				const result = target.keys().toArray();
-				return result;
-			},
-			getOwnPropertyDescriptor: (map, prop) => {
-				const result = Reflect.getOwnPropertyDescriptor(map, prop);
-
-				if (result === undefined && typeof prop === 'string') {
-					// Use map lookup for non-standard properties
-					return {
-						configurable: true,
-						enumerable: true,
-						value: map.get(prop as K),
-						writable: true
-					};
-				}
-
-				return result;
-			},
-
-			// Trap "'property' in object" operator calls
-			has: (map, prop) => {
-				const isMapProperty = Reflect.has(map, prop);
-
-				if (!isMapProperty && typeof prop === 'string') {
-					return map.has(prop as K);
-				} else {
-					return isMapProperty;
-				}
-			},
-
 			// Trap "delete object['property']" operator calls
-			deleteProperty: (map, prop) => {
-				const isMapProperty = Reflect.has(map, prop);
+			deleteProperty: (state, property) => {
+				const isMapProperty = isMapInstanceProperty(property) || isMapInstanceFunction(property);
 
-				if (!isMapProperty && typeof prop === 'string') {
-					return this.delete(prop as K);
+				if (!isMapProperty && typeof property === 'string') {
+					return this.delete(property);
 				} else {
-					return Reflect.deleteProperty(map, prop);
+					return Reflect.deleteProperty(state, property);
 				}
 			}
-		}) as MapObjectHybrid<Record<K, V>>;
+		}) as MapObjectHybrid<T>;
 	}
 }
 
@@ -210,4 +225,36 @@ function extractEntriesFromMapOrObject(source: SyncableMapOrObject) {
 	} else {
 		return Object.entries(source);
 	}
+}
+
+const MapPropertyNames = new Set([
+	// Properties
+	'size',
+	Symbol.iterator,
+	Symbol.toStringTag
+] satisfies (keyof Map<never, never>)[]);
+const MapFunctionNames = new Set([
+	// Access functions
+	'entries',
+	'forEach',
+	'get',
+	'has',
+	'keys',
+	'values',
+
+	// Mutation functions
+	'clear',
+	'delete',
+	'set'
+] satisfies (keyof Map<never, never>)[]);
+
+type MapPropertyName = typeof MapPropertyNames extends Set<infer P> ? P : never;
+type MapFunctionName = typeof MapFunctionNames extends Set<infer P> ? P : never;
+
+function isMapInstanceProperty(property: string | symbol): property is MapPropertyName {
+	return MapPropertyNames.has(property as MapPropertyName);
+}
+
+function isMapInstanceFunction(property: string | symbol): property is MapFunctionName {
+	return MapFunctionNames.has(property as MapFunctionName);
 }

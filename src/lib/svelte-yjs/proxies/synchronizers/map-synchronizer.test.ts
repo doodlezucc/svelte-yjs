@@ -13,8 +13,9 @@ describe('Usage', () => {
 	test('instanceof', () => {
 		const { proxiedAsMap, proxiedAsObject } = createdSynchronizedDocument();
 
-		expect(proxiedAsMap).toBeInstanceOf(Map);
-		expect(proxiedAsObject).toBeInstanceOf(Map); // TODO: This behavior can't be avoided and should be pointed out in the README
+		expect(proxiedAsObject).toBeInstanceOf(Object);
+		expect(proxiedAsObject).not.toBeInstanceOf(Map);
+		expect(proxiedAsMap).not.toBeInstanceOf(Map); // TODO: This behavior can't be avoided and should be pointed out in the README
 	});
 
 	test('Access property with Map.get', () => {
@@ -24,6 +25,8 @@ describe('Usage', () => {
 
 		expect(proxiedAsMap.get('isCool')).toEqual(true);
 		expect(proxiedAsMap.get('name')).toEqual(undefined);
+
+		// @ts-expect-error
 		expect(proxiedAsMap.get('unknownProperty')).toEqual(undefined);
 	});
 
@@ -57,6 +60,7 @@ describe('Usage', () => {
 		expect(Object.keys(emptyObject)).toEqual([]);
 		expect(Object.values(emptyObject)).toEqual([]);
 		expect({ ...emptyObject }).toEqual({});
+		expect(emptyObject).toEqual({});
 
 		const { proxiedAsObject } = createdSynchronizedDocument({
 			isCool: true
@@ -66,6 +70,7 @@ describe('Usage', () => {
 		expect(Object.keys(proxiedAsObject)).toEqual(['isCool']);
 		expect(Object.values(proxiedAsObject)).toEqual([true]);
 		expect({ ...proxiedAsObject }).toEqual({ isCool: true });
+		expect(proxiedAsObject).toEqual({ isCool: true });
 	});
 
 	test('Iterate map entries', () => {
@@ -103,7 +108,30 @@ describe('Usage', () => {
 
 		expect(proxiedAsMap.has('isCool')).toEqual(true);
 		expect(proxiedAsMap.has('name')).toEqual(true);
+
+		// @ts-expect-error
 		expect(proxiedAsMap.has('unknownProperty')).toEqual(false);
+	});
+
+	test('Map.forEach behavior', () => {
+		const { proxiedAsMap } = createdSynchronizedDocument({
+			name: 'Alice',
+			isCool: true
+		});
+
+		const expectedValues = ['Alice', true];
+		const expectedKeys = ['name', 'isCool'];
+
+		let index = 0;
+
+		proxiedAsMap.forEach((value, key, map) => {
+			expect(map).toBe(proxiedAsMap);
+
+			expect(value).toEqual(expectedValues[index]);
+			expect(key).toEqual(expectedKeys[index]);
+
+			index++;
+		});
 	});
 
 	test('Modify entry with setter', () => {
@@ -114,7 +142,7 @@ describe('Usage', () => {
 		proxiedAsObject.isCool = true;
 
 		expect(proxiedAsObject.isCool).toEqual(true);
-		expect({ ...proxiedAsObject }).toEqual({ isCool: true });
+		expect(proxiedAsObject).toEqual({ isCool: true });
 		expect(inYjs.get('isCool')).toEqual(true);
 	});
 
@@ -126,7 +154,7 @@ describe('Usage', () => {
 		proxiedAsMap.set('isCool', true);
 
 		expect(proxiedAsMap.get('isCool')).toEqual(true);
-		expect({ ...proxiedAsObject }).toEqual({ isCool: true });
+		expect(proxiedAsObject).toEqual({ isCool: true });
 		expect(inYjs.get('isCool')).toEqual(true);
 	});
 
@@ -138,7 +166,7 @@ describe('Usage', () => {
 		proxiedAsObject.name = 'Alice';
 
 		expect(proxiedAsObject.name).toEqual('Alice');
-		expect({ ...proxiedAsObject }).toEqual({ name: 'Alice', isCool: true });
+		expect(proxiedAsObject).toEqual({ name: 'Alice', isCool: true });
 		expect(inYjs.get('name')).toEqual('Alice');
 	});
 
@@ -150,7 +178,7 @@ describe('Usage', () => {
 		proxiedAsMap.set('name', 'Alice');
 
 		expect(proxiedAsMap.get('name')).toEqual('Alice');
-		expect({ ...proxiedAsObject }).toEqual({ name: 'Alice', isCool: true });
+		expect(proxiedAsObject).toEqual({ name: 'Alice', isCool: true });
 		expect(inYjs.get('name')).toEqual('Alice');
 	});
 
@@ -166,7 +194,7 @@ describe('Usage', () => {
 
 		expect(proxiedAsObject.name).toBeUndefined();
 		expect('name' in proxiedAsObject).toEqual(false);
-		expect({ ...proxiedAsObject }).toEqual({ isCool: true });
+		expect(proxiedAsObject).toEqual({ isCool: true });
 		expect(inYjs.has('name')).toEqual(false);
 	});
 
@@ -182,7 +210,7 @@ describe('Usage', () => {
 
 		expect(proxiedAsMap.get('name')).toBeUndefined();
 		expect(proxiedAsMap.has('name')).toEqual(false);
-		expect({ ...proxiedAsObject }).toEqual({ isCool: true });
+		expect(proxiedAsObject).toEqual({ isCool: true });
 		expect(inYjs.has('name')).toEqual(false);
 	});
 
@@ -197,7 +225,7 @@ describe('Usage', () => {
 		expect(proxiedAsMap.size).toEqual(0);
 		expect(proxiedAsObject.isCool).toBeUndefined();
 		expect(proxiedAsObject.name).toBeUndefined();
-		expect({ ...proxiedAsObject }).toEqual({});
+		expect(proxiedAsObject).toEqual({});
 
 		expect(inYjs.size).toEqual(0);
 		expect(inYjs.has('name')).toEqual(false);
@@ -296,7 +324,7 @@ function createdSynchronizedYDocWithMap(initialValue?: MyDocument) {
 	const yjsDoc = new Y.Doc();
 	const inYjs = yjsDoc.getMap<ValueOf<MyDocument>>('myMap');
 
-	const synchronizer = new MapSynchronizer(inYjs, initialValue);
+	const synchronizer = new MapSynchronizer<MyDocument>(inYjs, initialValue);
 	const proxiedAsMap = synchronizer.asTrap();
 	const proxiedAsObject = proxiedAsMap as unknown as MyDocument;
 
