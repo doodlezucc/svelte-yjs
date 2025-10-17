@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { createReactiveAwareness } from '$lib/awareness/awareness.svelte.js';
 	import { createSyncedState, SyncedText, type DeclareSyncableDocument } from 'svelte-yjs';
 	import * as Y from 'yjs';
-	import { createSyncedDocument } from './synced-document.js';
 
 	type ExampleDocument = DeclareSyncableDocument<{
 		description: SyncedText;
@@ -13,33 +12,54 @@
 		}[];
 	}>;
 
-	let syncedState = $state<ExampleDocument>();
+	interface Presence {
+		name: string;
+	}
 
-	onMount(async () => {
-		const yjsDocument = await createSyncedDocument();
+	const { data } = $props();
 
-		syncedState = createSyncedState<ExampleDocument>({
-			yjsDocument: yjsDocument,
-			initialState: {
-				description: new SyncedText(),
-				stringItems: [],
-				nestedItems: []
-			}
-		});
+	const reactiveAwareness = createReactiveAwareness<Presence>({
+		yjsAwareness: data.awareness,
+		initialState: {
+			name: 'Me :)'
+		}
 	});
 
-	let array = $derived(syncedState?.nestedItems ?? []);
+	const syncedState = createSyncedState<ExampleDocument>({
+		yjsDocument: data.doc,
+		initialState: {
+			description: new SyncedText(),
+			stringItems: [],
+			nestedItems: []
+		}
+	});
+
+	let array = $derived(syncedState.nestedItems);
 
 	$inspect(array);
-	$inspect(syncedState?.description.delta);
+	$inspect(syncedState.description.delta);
+
+	$inspect(reactiveAwareness.states);
 </script>
 
-<textarea>{syncedState?.description.string}</textarea>
+<h1>Awareness</h1>
 
-<button onclick={() => syncedState!.description.insert(0, 'new text')}>Insert</button>
+<input bind:value={reactiveAwareness.local.name} placeholder="Awareness name..." />
+
+<ul>
+	{#each reactiveAwareness.states as [id, state] (id)}
+		<li>{id} - {JSON.stringify(state)}</li>
+	{/each}
+</ul>
+
+<h1>SyncedText</h1>
+
+<textarea>{syncedState.description.string}</textarea>
+
+<button onclick={() => syncedState.description.insert(0, 'new text')}>Insert</button>
 <button
 	onclick={() =>
-		syncedState!.description.insertEmbed(5, {
+		syncedState.description.insertEmbed(5, {
 			embeddedInfo: {
 				isCool: true
 			}
@@ -47,11 +67,11 @@
 >
 	Insert Embed
 </button>
-<button onclick={() => syncedState!.description.insertEmbed(5, new Y.Array())}>
+<button onclick={() => syncedState.description.insertEmbed(5, new Y.Array())}>
 	Insert Embed YType
 </button>
 
-<br />
+<h1>Synced Array</h1>
 
 <button onclick={() => array.push({ name: 'new item', isCool: false })}>Push</button>
 

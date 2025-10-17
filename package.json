@@ -36,7 +36,8 @@
 	},
 	"peerDependencies": {
 		"svelte": "^5.0.0",
-		"yjs": ">=13.0.0"
+		"yjs": "^13.0.0",
+		"y-protocols": "^1.0.6"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.4.0",

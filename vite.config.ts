@@ -4,7 +4,7 @@ import { defineConfig } from 'vite';
 export default defineConfig({
 	plugins: [sveltekit()],
 	optimizeDeps: {
-		include: ['yjs', '@hocuspocus/provider']
+		include: ['@hocuspocus/provider', 'yjs', 'yjs-protocols/awareness.js']
 	},
 	test: {
 		expect: { requireAssertions: true },

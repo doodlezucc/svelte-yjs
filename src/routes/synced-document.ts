@@ -4,8 +4,11 @@ import { createHocuspocusProvider } from '../demo/client.js';
 export async function createSyncedDocument() {
 	const doc = new Y.Doc();
 
-	createHocuspocusProvider(doc);
+	const provider = createHocuspocusProvider(doc);
 	await doc.whenSynced;
 
-	return doc;
+	return {
+		doc,
+		awareness: provider.awareness!
+	};
 }

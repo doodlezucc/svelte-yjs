@@ -11,8 +11,11 @@ importers:
       ts-essentials:
         specifier: ^10.1.1
         version: 10.1.1(typescript@5.9.3)
+      y-protocols:
+        specifier: ^1.0.6
+        version: 1.0.6(yjs@13.6.27)
       yjs:
-        specifier: '>=13.0.0'
+        specifier: ^13.0.0
         version: 13.6.27
     devDependencies:
       '@eslint/compat':
