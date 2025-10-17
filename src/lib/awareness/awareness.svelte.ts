@@ -1,5 +1,5 @@
 import { SvelteMap } from 'svelte/reactivity';
-import { Awareness } from 'y-protocols/awareness.js';
+import type { Awareness } from 'y-protocols/awareness.js';
 
 export function createReactiveAwareness<T extends Record<string, any> | null>(
 	options: Options<T>
