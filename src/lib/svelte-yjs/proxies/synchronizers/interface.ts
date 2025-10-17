@@ -9,7 +9,7 @@ export abstract class Synchronizer<TType, YType extends Y.AbstractType<any> = Y.
 	constructor(inYjs: YType) {
 		this.inYjs = inYjs;
 		this.inYjs.observe((event, transaction) => {
-			if (!transaction.local) {
+			if (!transaction.local || transaction.origin instanceof Y.UndoManager) {
 				this.handleRemoteUpdate(event);
 			}
 		});

@@ -8,7 +8,7 @@ export function createSyncedState<T extends SyncableDocument>(
 ): T {
 	const { initialState, yjsDocument, yjsTopLevelIdentifier = '' } = options;
 
-	if (!yjsDocument.isSynced || !yjsDocument.isLoaded) {
+	if (!yjsDocument.isSynced && !yjsDocument.isLoaded) {
 		throw new Error(
 			'Y.Doc has not received "sync" or "load" events yet. A Y.Doc must be synced with a provider before calling createSyncedState(...).'
 		);
