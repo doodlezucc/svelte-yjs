@@ -38,6 +38,11 @@ export class MapSynchronizer<T extends SyncableObject>
 		}
 	}
 
+	/**
+	 * Notifies Svelte to track the `inSvelte` state as a dependency.
+	 */
+	private readonly registerEffect = $derived(() => Object.keys(this.inSvelte));
+
 	[Symbol.iterator]() {
 		return this.entries();
 	}
@@ -61,6 +66,7 @@ export class MapSynchronizer<T extends SyncableObject>
 	}
 
 	*entries(): MapIterator<[keyof T, ValueOf<T>]> {
+		this.registerEffect();
 		// The Yjs map keys are iterated here instead of the object keys
 		// because object keys don't follow insertion order in all cases.
 		for (const key of this.inYjs.keys()) {
@@ -69,12 +75,14 @@ export class MapSynchronizer<T extends SyncableObject>
 	}
 
 	*keys(): MapIterator<keyof T> {
+		this.registerEffect();
 		for (const key of this.inYjs.keys()) {
 			yield key;
 		}
 	}
 
 	*values(): MapIterator<ValueOf<T>> {
+		this.registerEffect();
 		for (const key of this.inYjs.keys()) {
 			yield this.inSvelte[key] as ValueOf<T>;
 		}
