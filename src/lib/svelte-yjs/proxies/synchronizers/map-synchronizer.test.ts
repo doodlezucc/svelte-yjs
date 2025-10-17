@@ -1,10 +1,10 @@
 import type { ValueOf } from 'ts-essentials';
 import { describe, expect, test } from 'vitest';
 import * as Y from 'yjs';
-import type { DeclareDocument } from '../../syncable-document-type.js';
+import type { DeclareSyncableDocument } from '../../syncable-document-type.js';
 import { MapSynchronizer } from './map-synchronizer.svelte.js';
 
-type MyDocument = DeclareDocument<{
+type TestDocument = DeclareSyncableDocument<{
 	isCool: boolean;
 	name?: string;
 }>;
@@ -299,7 +299,7 @@ describe('Yjs synchronization', () => {
 	});
 });
 
-function createdSynchronizedDocument(initialValue?: MyDocument) {
+function createdSynchronizedDocument(initialValue?: TestDocument) {
 	const { synchronizer, proxiedAsMap, proxiedAsObject } =
 		createdSynchronizedYDocWithMap(initialValue);
 
@@ -320,13 +320,13 @@ function createdSynchronizedDocument(initialValue?: MyDocument) {
 	};
 }
 
-function createdSynchronizedYDocWithMap(initialValue?: MyDocument) {
+function createdSynchronizedYDocWithMap(initialValue?: TestDocument) {
 	const yjsDoc = new Y.Doc();
-	const inYjs = yjsDoc.getMap<ValueOf<MyDocument>>('myMap');
+	const inYjs = yjsDoc.getMap<ValueOf<TestDocument>>('myMap');
 
-	const synchronizer = new MapSynchronizer<MyDocument>(inYjs, initialValue);
+	const synchronizer = new MapSynchronizer<TestDocument>(inYjs, initialValue);
 	const proxiedAsMap = synchronizer.asTrap();
-	const proxiedAsObject = proxiedAsMap as unknown as MyDocument;
+	const proxiedAsObject = proxiedAsMap as unknown as TestDocument;
 
 	return {
 		synchronizer,

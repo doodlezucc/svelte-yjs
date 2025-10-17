@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { createSyncedState } from '$lib/svelte-yjs/create-synced-state.js';
-	import type { DeclareDocument } from '$lib/svelte-yjs/syncable-document-type.js';
+	import type { DeclareSyncableDocument } from '$lib/svelte-yjs/syncable-document-type.js';
 	import { onMount } from 'svelte';
-	import { doc } from './synced-document.js';
+	import { createSyncedDocument } from './synced-document.js';
 
-	type MyDocument = DeclareDocument<{
+	type ExampleDocument = DeclareSyncableDocument<{
 		stringItems: string[];
 		nestedItems: {
 			name?: string;
@@ -12,21 +12,21 @@
 		}[];
 	}>;
 
-	let state = $state<MyDocument>();
+	let syncedState = $state<ExampleDocument>();
 
-	onMount(() => {
-		doc.whenSynced.then(() => {
-			state = createSyncedState<MyDocument>({
-				yjsDocument: doc,
-				initialState: {
-					stringItems: [],
-					nestedItems: []
-				}
-			});
+	onMount(async () => {
+		const yjsDocument = await createSyncedDocument();
+
+		syncedState = createSyncedState<ExampleDocument>({
+			yjsDocument: yjsDocument,
+			initialState: {
+				stringItems: [],
+				nestedItems: []
+			}
 		});
 	});
 
-	let array = $derived(state?.nestedItems ?? []);
+	let array = $derived(syncedState?.nestedItems ?? []);
 
 	$inspect(array);
 </script>

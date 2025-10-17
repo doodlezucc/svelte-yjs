@@ -17,7 +17,7 @@ export type SyncableObject = {
 
 export type SyncableDocument = SyncableObject;
 
-export type DeclareDocument<T extends SyncableDocument> = T;
+export type DeclareSyncableDocument<T extends SyncableDocument> = T;
 
 export function isSyncableNative(value: unknown): value is SyncableNative {
 	const type = typeof value;
