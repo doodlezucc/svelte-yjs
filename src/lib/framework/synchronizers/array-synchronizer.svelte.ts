@@ -242,8 +242,9 @@ export class ArraySynchronizer<E extends SyncableType>
 	}
 
 	private yjsSplice(start: number, ...variantArgs: [number?, ...unknown[]]) {
-		let [deleteCount, ...insertedItems] = variantArgs;
+		const [unnormalizedDeleteCount, ...insertedItems] = variantArgs;
 
+		let deleteCount = unnormalizedDeleteCount;
 		const length = this.inSvelte.length;
 
 		if (start < -length) {
@@ -339,7 +340,7 @@ export class ArraySynchronizer<E extends SyncableType>
 
 					if (isMutationFunction) {
 						return (...args: unknown[]) => {
-							// @ts-expect-error
+							// @ts-expect-error Dynamic function calls require spreaded arguments.
 							const functionResult = this[property as ArrayMutationFunctionName](...args);
 
 							if (functionResult === this.inSvelte) {

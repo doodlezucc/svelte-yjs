@@ -13,7 +13,7 @@ export type MapObjectHybrid<T extends Record<string, SyncableType>> = T &
 	SvelteMap<keyof T, ValueOf<T>>;
 
 export class MapSynchronizer<T extends SyncableObject>
-	extends Synchronizer<T, Y.Map<any>>
+	extends Synchronizer<T, Y.Map<ValueOf<T>>>
 	implements Map<keyof T, ValueOf<T>>
 {
 	inSvelte = $state({}) as T;
@@ -110,7 +110,7 @@ export class MapSynchronizer<T extends SyncableObject>
 		const synchronizerEntries = createSynchronizersFromMapOrObject(source);
 
 		for (const [key, synchronized] of synchronizerEntries) {
-			this.inYjs.set(key, synchronized.inYjs);
+			this.inYjs.set(key, synchronized.inYjs as ValueOf<T>);
 			this.setPropertyInSvelteState(key, synchronized.state as ValueOf<T>);
 		}
 	}
@@ -124,15 +124,11 @@ export class MapSynchronizer<T extends SyncableObject>
 		const changes = event.changes.keys;
 
 		for (const [key, change] of changes) {
-			switch (change.action) {
-				case 'add':
-				case 'update':
-					const proxiedValue = createProxyFromYType<ValueOf<T>>(this.inYjs.get(key));
-					this.setPropertyInSvelteState(key, proxiedValue);
-					break;
-				case 'delete':
-					delete this.inSvelte[key];
-					break;
+			if (change.action === 'add' || change.action === 'update') {
+				const proxiedValue = createProxyFromYType<ValueOf<T>>(this.inYjs.get(key));
+				this.setPropertyInSvelteState(key, proxiedValue);
+			} else if (change.action === 'delete') {
+				delete this.inSvelte[key];
 			}
 		}
 	}
@@ -165,7 +161,7 @@ export class MapSynchronizer<T extends SyncableObject>
 					}
 
 					return (...args: unknown[]) => {
-						// @ts-expect-error
+						// @ts-expect-error Dynamic function calls require spreaded arguments.
 						const functionResult = this[property](...args);
 
 						if (functionResult === this.inSvelte) {
@@ -213,7 +209,7 @@ type SyncableMapOrObject = Map<string, SyncableType> | SyncableObject;
 
 function createSynchronizersFromMapOrObject(source: SyncableMapOrObject) {
 	const entries = extractEntriesFromMapOrObject(source);
-	return entries.map<[string, SynchronizedPair<SyncableType, any>]>(([key, value]) => [
+	return entries.map<[string, SynchronizedPair<SyncableType, unknown>]>(([key, value]) => [
 		key,
 		createSynchronizedPairFromValue(value)
 	]);

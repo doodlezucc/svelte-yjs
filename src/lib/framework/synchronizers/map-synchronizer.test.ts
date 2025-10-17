@@ -15,7 +15,7 @@ describe('Usage', () => {
 
 		expect(proxiedAsObject).toBeInstanceOf(Object);
 		expect(proxiedAsObject).not.toBeInstanceOf(Map);
-		expect(proxiedAsMap).not.toBeInstanceOf(Map); // TODO: This behavior can't be avoided and should be pointed out in the README
+		expect(proxiedAsMap).not.toBeInstanceOf(Map); // TODO: This behavior can't be avoided and should be pointed out in the README.
 	});
 
 	test('Access property with Map.get', () => {
@@ -26,7 +26,7 @@ describe('Usage', () => {
 		expect(proxiedAsMap.get('isCool')).toEqual(true);
 		expect(proxiedAsMap.get('name')).toEqual(undefined);
 
-		// @ts-expect-error
+		// @ts-expect-error The following property is unknown on purpose.
 		expect(proxiedAsMap.get('unknownProperty')).toEqual(undefined);
 	});
 
@@ -38,9 +38,9 @@ describe('Usage', () => {
 		expect(proxiedAsObject.isCool).toEqual(true);
 		expect(proxiedAsObject.name).toEqual(undefined);
 
-		// @ts-expect-error
+		// @ts-expect-error The following property is unknown on purpose.
 		expect(proxiedAsObject['unknownProperty']).toEqual(undefined);
-		// @ts-expect-error
+		// @ts-expect-error The following property is unknown on purpose.
 		expect(proxiedAsObject.unknownProperty).toEqual(undefined);
 	});
 
@@ -109,7 +109,7 @@ describe('Usage', () => {
 		expect(proxiedAsMap.has('isCool')).toEqual(true);
 		expect(proxiedAsMap.has('name')).toEqual(true);
 
-		// @ts-expect-error
+		// @ts-expect-error The following property is unknown on purpose.
 		expect(proxiedAsMap.has('unknownProperty')).toEqual(false);
 	});
 
