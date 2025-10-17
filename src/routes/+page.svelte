@@ -28,9 +28,7 @@
 
 	let array = $derived(state?.nestedItems ?? []);
 
-	$effect(() => {
-		console.log(array.map((item) => ({ ...item })));
-	});
+	$inspect(array);
 </script>
 
 <button onclick={() => array.push({ name: 'new item', isCool: false })}>Push</button>

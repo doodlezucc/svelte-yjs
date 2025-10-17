@@ -246,7 +246,7 @@ describe('Yjs synchronization', () => {
 
 		synchronize();
 
-		expect({ ...remoteProxiedAsObject }).toEqual({ name: 'Alice', isCool: true });
+		expect(remoteProxiedAsObject).toEqual({ name: 'Alice', isCool: true });
 	});
 
 	test('Modify entry', () => {
@@ -255,12 +255,12 @@ describe('Yjs synchronization', () => {
 		});
 
 		synchronize();
-		expect({ ...remoteProxiedAsObject }).toEqual({ isCool: false });
+		expect(remoteProxiedAsObject).toEqual({ isCool: false });
 
 		proxiedAsObject.isCool = true;
 
 		synchronize();
-		expect({ ...remoteProxiedAsObject }).toEqual({ isCool: true });
+		expect(remoteProxiedAsObject).toEqual({ isCool: true });
 	});
 
 	test('Insert entry', () => {
@@ -271,7 +271,7 @@ describe('Yjs synchronization', () => {
 		proxiedAsObject.name = 'Alice';
 
 		synchronize();
-		expect({ ...remoteProxiedAsObject }).toEqual({ isCool: true, name: 'Alice' });
+		expect(remoteProxiedAsObject).toEqual({ isCool: true, name: 'Alice' });
 	});
 
 	test('Delete entry', () => {
@@ -283,7 +283,7 @@ describe('Yjs synchronization', () => {
 		proxiedAsMap.delete('name');
 
 		synchronize();
-		expect({ ...remoteProxiedAsObject }).toEqual({ isCool: true });
+		expect(remoteProxiedAsObject).toEqual({ isCool: true });
 	});
 
 	test('Clear map entries', () => {
@@ -295,7 +295,7 @@ describe('Yjs synchronization', () => {
 		proxiedAsMap.clear();
 
 		synchronize();
-		expect({ ...remoteProxiedAsObject }).toEqual({});
+		expect(remoteProxiedAsObject).toEqual({});
 	});
 });
 
