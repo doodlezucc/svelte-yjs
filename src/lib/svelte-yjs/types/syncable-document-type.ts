@@ -1,4 +1,4 @@
-import type { SyncedText } from '../proxies/synced-text.svelte.js';
+import type { SyncedText } from '../framework/synced-text.svelte.js';
 import type { PreventMapProperties } from './prevent-map-properties.js';
 
 export type SyncableType =
