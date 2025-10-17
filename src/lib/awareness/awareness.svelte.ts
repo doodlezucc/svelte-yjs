@@ -22,11 +22,17 @@ interface OptionsWithNullableState<T> {
 }
 
 export interface ReactiveAwareness<T extends Record<string, any> | null> {
+	/**
+	 * A deeply reactive `$state` used to access and modify the awareness data of
+	 * the local client. When modifying this object, the peers are automatically
+	 * notified with the updated state.
+	 */
 	local: T;
 
-	/**
-	 * A reactive map of all remote clients' awareness states.
-	 */
+	/** A numeric ID used to identify the local client in the `states` map. */
+	readonly localId: number;
+
+	/** A reactive map of all remote clients' awareness states. */
 	readonly peers: SvelteMap<number, T>;
 
 	/**
@@ -46,7 +52,7 @@ class ReactiveAwarenessImplementation<T extends Record<string, any> | null>
 		this.local = initialState;
 
 		for (const [id, state] of this.yjsAwareness.states) {
-			if (id === this.localClientId) continue;
+			if (id === this.localId) continue;
 
 			this.peers.set(id, state as T);
 		}
@@ -63,9 +69,9 @@ class ReactiveAwarenessImplementation<T extends Record<string, any> | null>
 	#local = $state() as T;
 	readonly peers = new SvelteMap<number, T>();
 
-	readonly states = $derived(new Map([[this.localClientId, this.#local], ...this.peers.entries()]));
+	readonly states = $derived(new Map([[this.localId, this.#local], ...this.peers.entries()]));
 
-	get localClientId() {
+	get localId() {
 		return this.yjsAwareness.clientID;
 	}
 
@@ -83,19 +89,19 @@ class ReactiveAwarenessImplementation<T extends Record<string, any> | null>
 		const latestStates = this.yjsAwareness.states;
 
 		for (const removedClientId of removed) {
-			if (removedClientId === this.localClientId) continue;
+			if (removedClientId === this.localId) continue;
 
 			this.peers.delete(removedClientId);
 		}
 
 		for (const addedClientId of added) {
-			if (addedClientId === this.localClientId) continue;
+			if (addedClientId === this.localId) continue;
 
 			this.peers.set(addedClientId, latestStates.get(addedClientId)! as T);
 		}
 
 		for (const updatedClientId of updated) {
-			if (updatedClientId === this.localClientId) continue;
+			if (updatedClientId === this.localId) continue;
 
 			this.peers.set(updatedClientId, latestStates.get(updatedClientId)! as T);
 		}

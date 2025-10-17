@@ -48,10 +48,12 @@
 		"@sveltejs/kit": "^2.47.1",
 		"@sveltejs/package": "^2.5.4",
 		"@sveltejs/vite-plugin-svelte": "^6.2.1",
+		"@vitest/browser": "^3.2.4",
 		"eslint": "^9.37.0",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-svelte": "^3.12.4",
 		"globals": "^16.4.0",
+		"playwright": "^1.55.1",
 		"prettier": "^3.6.2",
 		"prettier-plugin-svelte": "^3.4.0",
 		"publint": "^0.3.14",
@@ -60,7 +62,8 @@
 		"typescript": "^5.9.3",
 		"typescript-eslint": "^8.46.1",
 		"vite": "^7.1.10",
-		"vitest": "^3.2.4"
+		"vitest": "^3.2.4",
+		"vitest-browser-svelte": "^1.1.0"
 	},
 	"keywords": [
 		"svelte"
