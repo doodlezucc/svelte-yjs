@@ -1,7 +1,7 @@
 import { SvelteMap } from 'svelte/reactivity';
 import type { ValueOf } from 'ts-essentials';
 import * as Y from 'yjs';
-import { type SyncableObject, type SyncableType } from '../../syncable-document-type.js';
+import { type SyncableObject, type SyncableType } from '../../types/syncable-document-type.js';
 import {
 	createProxyFromYType,
 	createSynchronizedPairFromValue,

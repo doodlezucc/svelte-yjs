@@ -1,6 +1,6 @@
 import type { ElementOf } from 'ts-essentials';
 import * as Y from 'yjs';
-import { type SyncableType } from '../../syncable-document-type.js';
+import { type SyncableType } from '../../types/syncable-document-type.js';
 import { createProxyFromYType, createSynchronizedPairFromValue } from '../generic.js';
 import { Synchronizer } from './interface.js';
 

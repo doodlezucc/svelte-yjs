@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import * as Y from 'yjs';
 import { createSyncedState } from '../create-synced-state.js';
-import type { DeclareSyncableDocument } from '../syncable-document-type.js';
+import type { DeclareSyncableDocument } from '../types/syncable-document-type.js';
 
 type SyncedDocument = DeclareSyncableDocument<{
 	stringArray: string[];

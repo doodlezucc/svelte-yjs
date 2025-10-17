@@ -1,7 +1,7 @@
 import type { ValueOf } from 'ts-essentials';
 import { describe, expect, test } from 'vitest';
 import * as Y from 'yjs';
-import type { DeclareSyncableDocument } from '../../syncable-document-type.js';
+import type { DeclareSyncableDocument } from '../../types/syncable-document-type.js';
 import { MapSynchronizer } from './map-synchronizer.svelte.js';
 
 type TestDocument = DeclareSyncableDocument<{

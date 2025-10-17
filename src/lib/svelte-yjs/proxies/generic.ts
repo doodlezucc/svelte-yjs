@@ -1,5 +1,5 @@
 import * as Y from 'yjs';
-import { isSyncableNative, type SyncableType } from '../syncable-document-type.js';
+import { isSyncableNative, type SyncableType } from '../types/syncable-document-type.js';
 import { ConnectedYText, SyncedText } from './synced-text.svelte.js';
 import { ArraySynchronizer } from './synchronizers/array-synchronizer.svelte.js';
 import { MapSynchronizer } from './synchronizers/map-synchronizer.svelte.js';

@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 import { createProxyFromYType } from './proxies/generic.js';
 import { MapSynchronizer } from './proxies/synchronizers/map-synchronizer.svelte.js';
-import type { SyncableDocument, SyncableType } from './syncable-document-type.js';
+import type { SyncableDocument, SyncableType } from './types/syncable-document-type.js';
 
 export function createSyncedState<T extends SyncableDocument>(
 	options: CreateSyncedStateOptions<T>

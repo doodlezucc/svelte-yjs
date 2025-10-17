@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createSyncedState } from '$lib/svelte-yjs/create-synced-state.js';
 	import { SyncedText } from '$lib/svelte-yjs/proxies/synced-text.svelte.js';
-	import type { DeclareSyncableDocument } from '$lib/svelte-yjs/syncable-document-type.js';
+	import type { DeclareSyncableDocument } from '$lib/svelte-yjs/types/syncable-document-type.js';
 	import { onMount } from 'svelte';
 	import * as Y from 'yjs';
 	import { createSyncedDocument } from './synced-document.js';
