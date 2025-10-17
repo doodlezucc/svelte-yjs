@@ -1,3 +1,5 @@
+export { createReactiveAwareness } from './awareness/awareness.svelte.js';
+export type { ReactiveAwareness } from './awareness/awareness.svelte.js';
 export { createSyncedState } from './create-synced-state.js';
 export { SyncedText } from './framework/synced-text.svelte.js';
 export type {

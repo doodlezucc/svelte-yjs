@@ -1,23 +1,17 @@
 import { SvelteMap } from 'svelte/reactivity';
 import { Awareness } from 'y-protocols/awareness.js';
 
-export function createReactiveAwareness<T extends Record<string, any>>(
-	options: Options<T>
-): ReactiveAwareness<T>;
-
-export function createReactiveAwareness<T extends null>(
-	options: OptionsWithNullableState<T>
-): ReactiveAwareness<T>;
-
 export function createReactiveAwareness<T extends Record<string, any> | null>(
-	options: OptionsWithNullableState<T> | Options<T>
+	options: Options<T>
 ): ReactiveAwareness<T> {
 	const { yjsAwareness, initialState } = options;
 
-	return new ReactiveAwareness<T>(yjsAwareness, (initialState ?? null) as T);
+	return new ReactiveAwarenessImplementation(yjsAwareness, (initialState ?? null) as T);
 }
 
-interface Options<T> {
+type Options<T> = T extends null ? OptionsWithNullableState<T> : OptionsWithState<T>;
+
+interface OptionsWithState<T> {
 	initialState: T;
 	yjsAwareness: Awareness;
 }
@@ -27,7 +21,23 @@ interface OptionsWithNullableState<T> {
 	yjsAwareness: Awareness;
 }
 
-export class ReactiveAwareness<T extends Record<string, any> | null> {
+export interface ReactiveAwareness<T extends Record<string, any> | null> {
+	local: T;
+
+	/**
+	 * A reactive map of all remote clients' awareness states.
+	 */
+	readonly peers: SvelteMap<number, T>;
+
+	/**
+	 * A `$derived` map of all current awareness states including the local client's state.
+	 */
+	readonly states: Map<number, T>;
+}
+
+class ReactiveAwarenessImplementation<T extends Record<string, any> | null>
+	implements ReactiveAwareness<T>
+{
 	private readonly yjsAwareness: Awareness;
 
 	constructor(yjsAwareness: Awareness, initialState: T) {
@@ -51,15 +61,8 @@ export class ReactiveAwareness<T extends Record<string, any> | null> {
 	}
 
 	#local = $state() as T;
-
-	/**
-	 * A reactive map of all remote clients' awareness states.
-	 */
 	readonly peers = new SvelteMap<number, T>();
 
-	/**
-	 * A `$derived` map of all current awareness states including the local client's state.
-	 */
 	readonly states = $derived(new Map([[this.localClientId, this.#local], ...this.peers.entries()]));
 
 	get localClientId() {

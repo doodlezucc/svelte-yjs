@@ -1,6 +1,10 @@
 <script lang="ts">
-	import { createReactiveAwareness } from '$lib/awareness/awareness.svelte.js';
-	import { createSyncedState, SyncedText, type DeclareSyncableDocument } from 'svelte-yjs';
+	import {
+		createReactiveAwareness,
+		createSyncedState,
+		SyncedText,
+		type DeclareSyncableDocument
+	} from 'svelte-yjs';
 	import * as Y from 'yjs';
 
 	type ExampleDocument = DeclareSyncableDocument<{
