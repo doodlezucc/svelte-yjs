@@ -1,6 +1,6 @@
 import * as Y from 'yjs';
 import { isSyncableNative, type SyncableType } from '../syncable-document-type.js';
-import { SyncedText } from '../synced-text.svelte.js';
+import { ConnectedYText, SyncedText } from './synced-text.svelte.js';
 import { ArraySynchronizer } from './synchronizers/array-synchronizer.svelte.js';
 import { MapSynchronizer } from './synchronizers/map-synchronizer.svelte.js';
 
@@ -30,7 +30,10 @@ export function createSynchronizedPairFromValue<T extends SyncableType>(
 	}
 
 	if (value instanceof SyncedText) {
-		throw new Error(`createSynchronizedPairFromValue is not yet implemented for SyncedText`);
+		return {
+			inYjs: value[ConnectedYText],
+			state: value
+		};
 	}
 
 	if (value instanceof Map || typeof value === 'object') {
@@ -58,6 +61,10 @@ export function createProxyFromYType<T>(yType: unknown): T {
 	if (yType instanceof Y.Map) {
 		const synchronizer = new MapSynchronizer(yType);
 		return synchronizer.asTrap() as T;
+	}
+
+	if (yType instanceof Y.Text) {
+		return new SyncedText(yType) as T;
 	}
 
 	throw new Error(`Unable to map Yjs type ${yType} back to Svelte proxy`);
