@@ -14,7 +14,7 @@ const config = {
 		adapter: adapter(),
 
 		alias: {
-			'svelte-yjs': './src/lib/svelte-yjs/index.ts'
+			'svelte-yjs': './src/lib/index.ts'
 		}
 	}
 };

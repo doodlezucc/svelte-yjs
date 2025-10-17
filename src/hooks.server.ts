@@ -1,1 +1,1 @@
-import '$lib/demo/server.js';
+import './demo/server.js';
