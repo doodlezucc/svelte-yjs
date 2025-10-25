@@ -1,58 +1,114 @@
-# Svelte library
+# svelte-yjs
 
-Everything you need to build a Svelte library, powered by [`sv`](https://npmjs.com/package/sv).
+Reactive [Svelte](https://svelte.dev/) wrappers around [Yjs](https://yjs.dev/).
 
-Read more about creating a library [in the docs](https://svelte.dev/docs/kit/packaging).
+## Usage
 
-## Creating a project
+The heart of `svelte-yjs` is the `wrapYjsDocumentInState(...)` function. You can pass in an initialized Yjs document (a `Y.Doc` instance) and work with the result like with any `$state` wrapped object.
 
-If you're seeing this, you've probably already done this step. Congrats!
+```ts
+import { wrapYjsDocumentInState, type DeclareSyncableDocument } from 'svelte-yjs';
+import * as Y from 'yjs';
 
-```sh
-# create a new project in the current directory
-npx sv create
+// Yjs only supports certain "shared types". It's recommended that you
+// declare your document structure with `DeclareSyncableDocument<...>`,
+// which enforces a specific typed structure.
+type TodoListDocument = DeclareSyncableDocument<{
+	title: string;
+	description?: string;
+	items: {
+		text: string;
+		done: boolean;
+	}[];
+}>;
 
-# create a new project in my-app
-npx sv create my-app
+const doc = new Y.Doc();
+
+// You should initialize persistence and/or syncing here using Yjs
+// providers like "y-indexeddb" or "y-websocket".
+
+const state = wrapYjsDocumentInState<TodoListDocument>({
+	yjsDocument: doc,
+	initialState: {
+		title: 'New Todo List',
+		items: []
+	}
+});
+
+function createNewTodoItem() {
+	// Interact with the document state like you would with any object.
+	// The underlying Y.Array in the document is updated automatically.
+	state.items.push({ text: '', done: false });
+}
+
+// Svelte runes can be used on the synchronized state. This also updates
+// when any connected peers add or remove an item from the list.
+let hasAnyTodoItems = $derived(state.items.length > 0);
 ```
 
-## Developing
+### Allowed Types
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+The following types are allowed for declaring the structure of your document. The generic type `T` of complex data structures like arrays and maps is deeply bound to the same restrictions.
 
-```sh
-npm run dev
+| Syncable Type       | Yjs Structure |
+|---------------------|---------------|
+| `boolean`           | (atomic)      |
+| `number`            | (atomic)      |
+| `string`            | (atomic)      |
+| `null`              | (atomic)      |
+| `undefined`         | (atomic)      |
+| `Uint8Array`        | (atomic)      |
+| `Record<string, T>` | `Y.Map<T>`    |
+| `Map<string, T>`    | `Y.Map<T>`    |
+| `Array<T>`          | `Y.Array<T>`  |
+| `SyncedText`        | `Y.Text`      |
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
+Note that `Record<string, T>` refers to any JavaScript object which consists of syncable type properties. In other words, you can declare your document as an object with multiple nesting levels - during runtime, each level is internally represented as a `Y.Map`.
 
-Everything inside `src/lib` is part of your library, everything inside `src/routes` can be used as a showcase or preview app.
+`SyncedText` is an exported class from `svelte-yjs`, which can be used to implement collaborative text editing. Instead of replacing the entire shared text string on every keypress, you can use the "delta" functions on `SyncedText` instances to insert text at one point or to delete some characters at another point.
 
-## Building
+## Awareness
 
-To build your library:
+Awareness (or "presence") in Yjs represents **live** user information that isn't persisted in the document. For example, this could be a nickname or the current cursor position of any connected user.
 
-```sh
-npm pack
-```
+In `svelte-yjs`, this live information can be modified and reacted to using the `wrapYjsAwarenessInState(...)` function.
 
-To create a production version of your showcase app:
+```ts
+import { wrapYjsAwarenessInState } from 'svelte-yjs';
 
-```sh
-npm run build
-```
+interface UserState {
+	nickname: string;
+	cursor?: {
+		x: number;
+		y: number;
+	};
+}
 
-You can preview the production build with `npm run preview`.
+// Most Yjs providers expose an interactable "Awareness"
+// instance as a property. That instance can be passed to
+// wrapYjsAwarenessInState(...) to produce a reactive version.
+const yjsProvider = /** */;
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+const awareness = wrapYjsAwarenessInState<UserState>({
+	yjsAwareness: yjsProvider.awareness,
+	initialState: {
+		nickname: 'Alice'
+	}
+});
 
-## Publishing
+function onMouseMove(ev: MouseEvent) {
+	// Modify the live information associated with the local
+	// user by updating the `local` property.
+	awareness.local.cursor = { x: ev.pageX, y: ev.pageY };
+}
 
-Go into the `package.json` and give your package the desired name through the `"name"` option. Also consider adding a `"license"` field and point it to a `LICENSE` file which you can create from a template (one popular option is the [MIT license](https://opensource.org/license/mit/)).
-
-To publish your library to [npm](https://www.npmjs.com):
-
-```sh
-npm publish
+// `states` maps all connected client IDs to their current state.
+// Whenever a user updates their nickname, this $derived value
+// gets automatically re-evaluated.
+let allOnlineNames = $derived(
+	awareness.states
+		.values()
+		.map((state) => state.nickname)
+		.toArray()
+);
 ```
