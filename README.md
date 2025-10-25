@@ -51,7 +51,7 @@ let hasAnyTodoItems = $derived(state.items.length > 0);
 The following types are allowed for declaring the structure of your document. The generic type `T` of complex data structures like arrays and maps is deeply bound to the same restrictions.
 
 | Syncable Type       | Yjs Structure |
-|---------------------|---------------|
+| ------------------- | ------------- |
 | `boolean`           | (atomic)      |
 | `number`            | (atomic)      |
 | `string`            | (atomic)      |
