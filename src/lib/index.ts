@@ -1,6 +1,5 @@
-export { createReactiveAwareness } from './awareness/awareness.svelte.js';
+export { wrapYjsAwarenessInState } from './awareness/awareness.svelte.js';
 export type { ReactiveAwareness } from './awareness/awareness.svelte.js';
-export { createSyncedState } from './create-synced-state.js';
 export { SyncedText } from './framework/synced-text.svelte.js';
 export type {
 	DeleteOperation,
@@ -16,3 +15,4 @@ export type {
 	SyncableObject,
 	SyncableType
 } from './types/syncable-document-type.js';
+export { wrapYjsDocumentInState } from './wrap-in-state.js';

@@ -1,7 +1,7 @@
 import { SvelteMap } from 'svelte/reactivity';
 import type { Awareness } from 'y-protocols/awareness.js';
 
-export function createReactiveAwareness<T extends Record<string, any> | null>(
+export function wrapYjsAwarenessInState<T extends Record<string, any> | null>(
 	options: Options<T>
 ): ReactiveAwareness<T> {
 	const { yjsAwareness, initialState } = options;

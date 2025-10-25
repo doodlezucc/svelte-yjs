@@ -3,15 +3,17 @@ import { createProxyFromYType } from './framework/generic.js';
 import { MapSynchronizer } from './framework/synchronizers/map-synchronizer.svelte.js';
 import type { SyncableDocument, SyncableType } from './types/syncable-document-type.js';
 
-export function createSyncedState<T extends SyncableDocument>(
+export function wrapYjsDocumentInState<T extends SyncableDocument>(
 	options: CreateSyncedStateOptions<T>
 ): T {
 	const { initialState, yjsDocument, yjsTopLevelIdentifier = '' } = options;
 
 	if (!yjsDocument.isSynced && !yjsDocument.isLoaded) {
 		console.warn(
-			'The specified yjsDocument has not received "sync" or "load" events yet. ' +
-				'A Y.Doc should be synced with a provider before calling createSyncedState(...) to avoid initialization issues.'
+			'' +
+				'The specified yjsDocument has not received "sync" or "load" events yet. ' +
+				'A Y.Doc should be synced with a provider before calling wrapYjsDocumentInState(...) ' +
+				'to avoid initialization issues.'
 		);
 	}
 

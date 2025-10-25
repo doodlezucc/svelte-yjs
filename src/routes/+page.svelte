@@ -1,8 +1,8 @@
 <script lang="ts">
 	import {
-		createReactiveAwareness,
-		createSyncedState,
 		SyncedText,
+		wrapYjsAwarenessInState,
+		wrapYjsDocumentInState,
 		type DeclareSyncableDocument
 	} from 'svelte-yjs';
 	import * as Y from 'yjs';
@@ -22,14 +22,14 @@
 
 	const { data } = $props();
 
-	const reactiveAwareness = createReactiveAwareness<Presence>({
+	const reactiveAwareness = wrapYjsAwarenessInState<Presence>({
 		yjsAwareness: data.awareness,
 		initialState: {
 			name: 'Me :)'
 		}
 	});
 
-	const syncedState = createSyncedState<ExampleDocument>({
+	const syncedState = wrapYjsDocumentInState<ExampleDocument>({
 		yjsDocument: data.doc,
 		initialState: {
 			description: new SyncedText(),

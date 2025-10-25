@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import * as Y from 'yjs';
-import { createSyncedState } from '../create-synced-state.js';
 import type { DeclareSyncableDocument } from '../types/syncable-document-type.js';
+import { wrapYjsDocumentInState } from '../wrap-in-state.js';
 
 type SyncedDocument = DeclareSyncableDocument<{
 	stringArray: string[];
@@ -11,7 +11,7 @@ test('Undo/redo', () => {
 	const yjsDocument = new Y.Doc();
 	yjsDocument.isSynced = true;
 
-	const syncedState = createSyncedState<SyncedDocument>({
+	const syncedState = wrapYjsDocumentInState<SyncedDocument>({
 		yjsDocument: yjsDocument,
 		initialState: {
 			stringArray: []

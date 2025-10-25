@@ -2,7 +2,7 @@ import { flushSync } from 'svelte';
 import { expect, test } from 'vitest';
 import { applyAwarenessUpdate, Awareness, encodeAwarenessUpdate } from 'y-protocols/awareness.js';
 import * as Y from 'yjs';
-import { createReactiveAwareness, type ReactiveAwareness } from './awareness.svelte.js';
+import { wrapYjsAwarenessInState, type ReactiveAwareness } from './awareness.svelte.js';
 
 interface Presence {
 	name: string;
@@ -83,7 +83,7 @@ function createReactiveAwarenessWithEffectRoot(yjsAwareness: Awareness, initialS
 	let reactiveAwareness!: ReactiveAwareness<Presence>;
 
 	$effect.root(() => {
-		reactiveAwareness = createReactiveAwareness<Presence>({
+		reactiveAwareness = wrapYjsAwarenessInState<Presence>({
 			yjsAwareness,
 			initialState
 		});
